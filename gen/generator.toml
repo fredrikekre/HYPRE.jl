@@ -1,0 +1,5 @@
+[general]
+library_name = "libHYPRE"
+output_file_path = "libHYPRE.jl"
+jll_pkg_name = "HYPRE_jll"
+export_symbol_prefixes = []
