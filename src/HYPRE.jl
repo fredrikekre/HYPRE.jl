@@ -66,6 +66,8 @@ using SparseMatricesCSR: SparseMatrixCSR, colvals
 using MPI: MPI
 using .LibHYPRE
 
+export HYPREMatrix, HYPREVector
+
 module Internals
     function check_n_rows end
     function to_hypre_data end
