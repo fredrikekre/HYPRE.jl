@@ -3,29 +3,6 @@ export HYPRE_jll
 
 using CEnum
 
-struct hypre_IJMatrix_struct
-    comm::Cint
-    row_partitioning::NTuple{2, Cint}
-    col_partitioning::NTuple{2, Cint}
-    object_type::Cint
-    object::Ptr{Cvoid}
-    translator::Ptr{Cvoid}
-    assumed_part::Ptr{Cvoid}
-    assemble_flag::Cint
-    global_first_row::Cint
-    global_first_col::Cint
-    global_num_rows::Cint
-    global_num_cols::Cint
-    omp_flag::Cint
-    print_level::Cint
-end
-
-const hypre_IJMatrix = hypre_IJMatrix_struct
-
-function hypre_IJMatrixMemoryLocation(matrix)
-    ccall((:hypre_IJMatrixMemoryLocation, libHYPRE), Cint, (Ptr{hypre_IJMatrix},), matrix)
-end
-
 const MPI_Comm = Cint
 
 const MPI_Op = Cint
@@ -9904,6 +9881,8 @@ end
 function HYPRE_SetUseGpuRand(use_curand)
     ccall((:HYPRE_SetUseGpuRand, libHYPRE), HYPRE_Int, (HYPRE_Int,), use_curand)
 end
+
+mutable struct hypre_IJMatrix_struct end
 
 const HYPRE_IJMatrix = Ptr{hypre_IJMatrix_struct}
 

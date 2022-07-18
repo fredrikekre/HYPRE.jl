@@ -23,7 +23,6 @@ push!(args, "-DHYPRE_ENABLE_CURAND=OFF")
 
 headers = joinpath.(hypre_include_dir, [
     "HYPRE.h",
-    "IJ_matrix.h",
     "HYPRE_IJ_mv.h",
     "HYPRE_parcsr_mv.h",
     "HYPRE_parcsr_ls.h",
