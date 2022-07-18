@@ -198,5 +198,38 @@ end
     @test_throws ArgumentError Internals.to_hypre_data([1, 2], ilower, iupper)
 end
 
-@testset "HYPREMatrix(::PVector)" begin
+@testset "HYPREVector(::PVector)" begin
+    # Sequential backend
+    backend = SequentialBackend()
+    parts = get_part_ids(backend, 2)
+    rows = PRange(parts, 10)
+    b = rand(10)
+    I, V = map_parts(parts) do p
+        if p == 1
+            return collect(1:6), b[1:6]
+        else # p == 2
+            return collect(4:10), b[4:10]
+        end
+    end
+    add_gids!(rows, I)
+    pb = PVector(I, V, rows; ids=:global)
+    # TODO: This should be assembled, see
+    # https://github.com/fverdugo/PartitionedArrays.jl/discussions/67
+    @test tomain(copy(pb)) == b
+    H = HYPREVector(pb)
+    @test H.IJVector != HYPRE_IJVector(C_NULL)
+    @test H.ParVector != HYPRE_ParVector(C_NULL)
+    # MPI backend
+    backend = MPIBackend()
+    parts = get_part_ids(backend, 1)
+    rows = PRange(parts, 10)
+    I, V = map_parts(parts) do p
+        return collect(1:10), b
+    end
+    add_gids!(rows, I)
+    pb = PVector(I, V, rows; ids=:global)
+    @test tomain(copy(pb)) == b
+    H = HYPREVector(pb)
+    @test H.IJVector != HYPRE_IJVector(C_NULL)
+    @test H.ParVector != HYPRE_ParVector(C_NULL)
 end
