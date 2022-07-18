@@ -213,9 +213,8 @@ end
     end
     add_gids!(rows, I)
     pb = PVector(I, V, rows; ids=:global)
-    # TODO: This should be assembled, see
-    # https://github.com/fverdugo/PartitionedArrays.jl/discussions/67
-    @test tomain(copy(pb)) == b
+    assemble!(pb)
+    @test tomain(copy(pb)) == [i in 4:6 ? 2x : x for (i, x) in zip(eachindex(b), b)]
     H = HYPREVector(pb)
     @test H.IJVector != HYPRE_IJVector(C_NULL)
     @test H.ParVector != HYPRE_ParVector(C_NULL)
@@ -228,6 +227,7 @@ end
     end
     add_gids!(rows, I)
     pb = PVector(I, V, rows; ids=:global)
+    assemble!(pb)
     @test tomain(copy(pb)) == b
     H = HYPREVector(pb)
     @test H.IJVector != HYPRE_IJVector(C_NULL)
