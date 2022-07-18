@@ -218,6 +218,9 @@ end
     H = HYPREVector(pb)
     @test H.IJVector != HYPRE_IJVector(C_NULL)
     @test H.ParVector != HYPRE_ParVector(C_NULL)
+    pbc = fill!(copy(pb), 0)
+    copy!(pbc, H)
+    @test tomain(copy(pbc)) == tomain(copy(pb))
     # MPI backend
     backend = MPIBackend()
     parts = get_part_ids(backend, 1)
@@ -232,4 +235,7 @@ end
     H = HYPREVector(pb)
     @test H.IJVector != HYPRE_IJVector(C_NULL)
     @test H.ParVector != HYPRE_ParVector(C_NULL)
+    pbc = fill!(copy(pb), 0)
+    copy!(pbc, H)
+    @test tomain(copy(pbc)) == tomain(copy(pb))
 end
