@@ -11,6 +11,7 @@ using SparseMatricesCSR
 using Test
 
 MPI.Init()
+HYPRE_Init()
 
 @testset "HYPREMatrix" begin
     H = HYPREMatrix()
@@ -264,6 +265,10 @@ end
     copy!(x, x_h)
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
+    # Test without passing initial guess
+    x_h = HYPRE.solve(amg, A_h, b_h)
+    copy!(x, x_h)
+    @test x ≈ A \ b atol=tol
 end
 
 @testset "(ParCSR)PCG" begin
@@ -282,11 +287,19 @@ end
     copy!(x, x_h)
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
+    # Test without passing initial guess
+    x_h = HYPRE.solve(pcg, A_h, b_h)
+    copy!(x, x_h)
+    @test x ≈ A \ b atol=tol
     # Solve with AMG preconditioner
     precond = HYPRE.BoomerAMG()
     pcg = HYPRE.PCG(; Tol = tol, Precond = precond)
     HYPRE.solve!(pcg, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+    # Test without passing initial guess
+    x_h = HYPRE.solve(pcg, A_h, b_h)
+    copy!(x, x_h)
     @test x ≈ A \ b atol=tol
 end
