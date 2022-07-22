@@ -437,4 +437,8 @@ function Base.copy!(v::PVector, h::HYPREVector)
     return v
 end
 
+# Solver interface
+include("solvers.jl")
+include("solver_options.jl")
+
 end # module HYPRE

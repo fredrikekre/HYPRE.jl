@@ -10,5 +10,8 @@ function init_matrix end
 function init_vector end
 function assemble_matrix end
 function assemble_vector end
+function set_options end
+function solve_func end
+function setup_func end
 
 end # module Internals

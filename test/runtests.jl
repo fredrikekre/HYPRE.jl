@@ -247,3 +247,21 @@ end
     copy!(pbc, H)
     @test tomain(copy(pbc)) == tomain(copy(pb))
 end
+
+@testset "BoomerAMG" begin
+    # Setup
+    A = sprand(100, 100, 0.05); A = A'A + 5I
+    b = rand(100)
+    x = zeros(100)
+    ilower, iupper = 1, size(A, 1)
+    A_h = HYPREMatrix(A, ilower, iupper)
+    b_h = HYPREVector(b, ilower, iupper)
+    x_h = HYPREVector(b, ilower, iupper)
+    # Solve
+    tol = 1e-9
+    amg = HYPRE.BoomerAMG(; Tol = tol)
+    HYPRE.solve!(amg, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+end
