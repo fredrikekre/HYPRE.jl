@@ -7,6 +7,30 @@ Abstract super type of all the wrapped HYPRE solvers.
 """
 abstract type HYPRESolver end
 
+# Generic fallback allocating a zero vector as initial guess
+# TODO: This should allocate x using the owned cols instead of rows of A/b, but currently
+#       it is assumed these are always equivalent.
+"""
+    solve(solver::HYPRESolver, A::HYPREMatrix, b::HYPREVector)
+
+Solve the linear system `A x = b` using `solver` and return the solution vector.
+
+This method allocates the initial guess/output vector `x`, initialized to 0.
+
+See also [`solve!`](@ref).
+"""
+solve(solver::HYPRESolver, A::HYPREMatrix, b::HYPREVector) = solve!(solver, zero(b), A, b)
+
+"""
+    solve!(solver::HYPRESolver, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
+
+Solve the linear system `A x = b` using `solver` with `x` as the initial guess.
+
+See also [`solve`](@ref).
+"""
+solve!(pcg::HYPRESolver, x::HYPREVector, A::HYPREMatrix, ::HYPREVector)
+
+
 #############
 # BoomerAMG #
 #############
