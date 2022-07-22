@@ -173,6 +173,14 @@ end
     Internals.assemble_vector(h)
     @test h.IJVector != HYPRE_IJVector(C_NULL)
     @test h.ParVector != HYPRE_ParVector(C_NULL)
+
+    # Base.zero(::HYPREVector) and Base.copy!(::Vector, HYPREVector)
+    b = rand(10)
+    h = HYPREVector(b, 1, 10)
+    z = zero(h)
+    b′ = copy!(b, z)
+    @test b === b′
+    @test iszero(b)
 end
 
 @testset "HYPREVector(::Vector)" begin
