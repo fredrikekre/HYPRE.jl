@@ -265,3 +265,28 @@ end
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
 end
+
+@testset "(ParCSR)PCG" begin
+    # Setup
+    A = sprand(100, 100, 0.05); A = A'A + 5I
+    b = rand(100)
+    x = zeros(100)
+    ilower, iupper = 1, size(A, 1)
+    A_h = HYPREMatrix(A, ilower, iupper)
+    b_h = HYPREVector(b, ilower, iupper)
+    x_h = HYPREVector(b, ilower, iupper)
+    # Solve
+    tol = 1e-9
+    pcg = HYPRE.PCG(; Tol = tol)
+    HYPRE.solve!(pcg, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+    # Solve with AMG preconditioner
+    precond = HYPRE.BoomerAMG()
+    pcg = HYPRE.PCG(; Tol = tol, Precond = precond)
+    HYPRE.solve!(pcg, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+end

@@ -15,7 +15,9 @@ function generate_options(io, structname, prefix)
         k = String(match(r, string(n))[1])
         print(io, "        $(first ? "" : "else")if k === :$(k)")
         println(io)
-        if nargs == 1
+        if k == "Precond"
+            println(io, "            Internals.set_precond(s, v)")
+        elseif nargs == 1
             println(io, "            @check ", n, "(solver)")
         elseif nargs == 2
             println(io, "            @check ", n, "(solver, v)")
@@ -37,4 +39,5 @@ open(joinpath(@__DIR__, "..", "src", "solver_options.jl"), "w") do io
     println(io, "Internals.set_options(::HYPRESolver, kwargs) = nothing")
 
     generate_options(io, "BoomerAMG", "HYPRE_BoomerAMGSet")
+    generate_options(io, "PCG", "HYPRE_PCGSet")
 end
