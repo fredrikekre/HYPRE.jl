@@ -13,5 +13,6 @@ function assemble_vector end
 function set_options end
 function solve_func end
 function setup_func end
+function set_precond end
 
 end # module Internals
