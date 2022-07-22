@@ -65,7 +65,7 @@ end
 end
 
 function tomain(x)
-    g = gather(x)
+    g = gather(copy(x))
     be = get_backend(g.values)
     if be isa SequentialBackend
         return g.values.parts[1]
@@ -107,7 +107,7 @@ end
     CSC = PSparseMatrix(diag_data(backend, parts)...; ids=:global)
     CSR = PSparseMatrix(sparsecsr, diag_data(backend, parts)...; ids=:global)
 
-    @test tomain(copy(CSC)) == tomain(copy(CSR)) ==
+    @test tomain(CSC) == tomain(CSR) ==
         Diagonal([1, 2, 3, 8, 10, 12, 7, 8, 9, 10])
 
     map_parts(CSC.values, CSC.rows.partition, CSC.cols.partition,
@@ -141,7 +141,7 @@ end
     CSC = PSparseMatrix(diag_data(backend, parts)...; ids=:global)
     CSR = PSparseMatrix(sparsecsr, diag_data(backend, parts)...; ids=:global)
 
-    @test tomain(copy(CSC)) == tomain(copy(CSR)) ==
+    @test tomain(CSC) == tomain(CSR) ==
         Diagonal([1, 2, 3, 8, 10, 12, 7, 8, 9, 10])
 
     map_parts(CSC.values, CSC.rows.partition, CSC.cols.partition,
@@ -223,13 +223,13 @@ end
     add_gids!(rows, I)
     pb = PVector(I, V, rows; ids=:global)
     assemble!(pb)
-    @test tomain(copy(pb)) == [i in 4:6 ? 2x : x for (i, x) in zip(eachindex(b), b)]
+    @test tomain(pb) == [i in 4:6 ? 2x : x for (i, x) in zip(eachindex(b), b)]
     H = HYPREVector(pb)
     @test H.IJVector != HYPRE_IJVector(C_NULL)
     @test H.ParVector != HYPRE_ParVector(C_NULL)
     pbc = fill!(copy(pb), 0)
     copy!(pbc, H)
-    @test tomain(copy(pbc)) == tomain(copy(pb))
+    @test tomain(pbc) == tomain(pb)
     # MPI backend
     backend = MPIBackend()
     parts = get_part_ids(backend, 1)
@@ -240,13 +240,13 @@ end
     add_gids!(rows, I)
     pb = PVector(I, V, rows; ids=:global)
     assemble!(pb)
-    @test tomain(copy(pb)) == b
+    @test tomain(pb) == b
     H = HYPREVector(pb)
     @test H.IJVector != HYPRE_IJVector(C_NULL)
     @test H.ParVector != HYPRE_ParVector(C_NULL)
     pbc = fill!(copy(pb), 0)
     copy!(pbc, H)
-    @test tomain(copy(pbc)) == tomain(copy(pb))
+    @test tomain(pbc) == tomain(pb)
 end
 
 @testset "BoomerAMG" begin
@@ -302,4 +302,40 @@ end
     x_h = HYPRE.solve(pcg, A_h, b_h)
     copy!(x, x_h)
     @test x ≈ A \ b atol=tol
+end
+
+function topartitioned(x::Vector, A::SparseMatrixCSC, b::Vector)
+    parts = get_part_ids(SequentialBackend(), 1)
+    rows = PRange(parts, size(A, 1))
+    cols = PRange(parts, size(A, 2))
+    II, JJ, VV, bb, xx = map_parts(parts) do _
+        return findnz(A)..., b, x
+    end
+    add_gids!(rows, II)
+    assemble!(II, JJ, VV, rows)
+    add_gids!(cols, JJ)
+    A_p = PSparseMatrix(II, JJ, VV, rows, cols; ids = :global)
+    b_p = PVector(bb, rows)
+    x_p = PVector(xx, cols)
+    return x_p, A_p, b_p
+end
+
+@testset "solve with PartitionedArrays" begin
+    # Setup
+    A = sprand(100, 100, 0.05); A = A'A + 5I
+    b = rand(100)
+    x = zeros(100)
+    x_p, A_p, b_p = topartitioned(x, A, b)
+    @test A == tomain(A_p)
+    @test b == tomain(b_p)
+    @test x == tomain(x_p)
+    # Solve
+    tol = 1e-9
+    pcg = HYPRE.PCG(; Tol = tol)
+    ## solve!
+    HYPRE.solve!(pcg, x_p, A_p, b_p)
+    @test tomain(x_p) ≈ A \ b atol=tol
+    ## solve
+    x_p = HYPRE.solve(pcg, A_p, b_p)
+    @test tomain(x_p) ≈ A \ b atol=tol
 end
