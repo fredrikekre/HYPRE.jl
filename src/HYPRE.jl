@@ -208,13 +208,16 @@ function Internals.to_hypre_data(A::SparseMatrixCSR, ilower, iupper)
 end
 
 # TODO: Default to ilower = 1, iupper = size(B, 1)?
-function HYPREMatrix(B::Union{SparseMatrixCSC,SparseMatrixCSR}, ilower, iupper, comm::MPI.Comm=MPI.COMM_WORLD)
+function HYPREMatrix(comm::MPI.Comm, B::Union{SparseMatrixCSC,SparseMatrixCSR}, ilower, iupper)
     A = HYPREMatrix(comm, ilower, iupper)
     nrows, ncols, rows, cols, values = Internals.to_hypre_data(B, ilower, iupper)
     @check HYPRE_IJMatrixSetValues(A.IJMatrix, nrows, ncols, rows, cols, values)
     Internals.assemble_matrix(A)
     return A
 end
+
+HYPREMatrix(B::Union{SparseMatrixCSC,SparseMatrixCSR}, ilower, iupper) =
+    HYPREMatrix(MPI.COMM_WORLD, B, ilower, iupper)
 
 #########################
 # Vector -> HYPREVector #
@@ -229,13 +232,15 @@ end
 # TODO: Internals.to_hypre_data(x::SparseVector, ilower, iupper) (?)
 
 # TODO: Default to ilower = 1, iupper = length(x)?
-function HYPREVector(x::Vector, ilower, iupper, comm=MPI.COMM_WORLD)
+function HYPREVector(comm::MPI.Comm, x::Vector, ilower, iupper)
     b = HYPREVector(comm, ilower, iupper)
     nvalues, indices, values = Internals.to_hypre_data(x, ilower, iupper)
     @check HYPRE_IJVectorSetValues(b.IJVector, nvalues, indices, values)
     Internals.assemble_vector(b)
     return b
 end
+
+HYPREVector(x::Vector, ilower, iupper) = HYPREVector(MPI.COMM_WORLD, x, ilower, iupper)
 
 function Base.copy!(x::Vector, h::HYPREVector)
     ilower, iupper = Internals.get_proc_rows(h)

@@ -52,10 +52,16 @@ end
     CSC = sprand(5, 10, 0.3)
     CSR = sparsecsr(findnz(CSC)..., size(CSC)...)
     @test CSC == CSR
-    H = HYPREMatrix(CSC, ilower,  iupper)
+    H = HYPREMatrix(CSC, ilower, iupper)
     @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
     @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
-    H = HYPREMatrix(CSR, ilower,  iupper)
+    H = HYPREMatrix(MPI.COMM_WORLD, CSC, ilower, iupper)
+    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    H = HYPREMatrix(CSR, ilower, iupper)
+    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    H = HYPREMatrix(MPI.COMM_WORLD, CSR, ilower,  iupper)
     @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
     @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
 end
@@ -180,6 +186,9 @@ end
     ilower, iupper = 1, 10
     b = rand(HYPRE_Complex, 10)
     h = HYPREVector(b, ilower, iupper)
+    @test h.IJVector != HYPRE_IJVector(C_NULL)
+    @test h.ParVector != HYPRE_ParVector(C_NULL)
+    h = HYPREVector(MPI.COMM_WORLD, b, ilower, iupper)
     @test h.IJVector != HYPRE_IJVector(C_NULL)
     @test h.ParVector != HYPRE_ParVector(C_NULL)
     @test_throws ArgumentError HYPREVector([1, 2], ilower, iupper)
