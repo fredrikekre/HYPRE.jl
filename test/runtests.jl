@@ -52,18 +52,36 @@ end
     CSC = sprand(5, 10, 0.3)
     CSR = sparsecsr(findnz(CSC)..., size(CSC)...)
     @test CSC == CSR
+
     H = HYPREMatrix(CSC, ilower, iupper)
     @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
     @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
     H = HYPREMatrix(MPI.COMM_WORLD, CSC, ilower, iupper)
     @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
     @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+
     H = HYPREMatrix(CSR, ilower, iupper)
     @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
     @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
     H = HYPREMatrix(MPI.COMM_WORLD, CSR, ilower,  iupper)
     @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
     @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+
+    # Default to owning all rows
+    CSC = sprand(10, 10, 0.3)
+    CSR = sparsecsr(findnz(CSC)..., size(CSC)...)
+    H = HYPREMatrix(CSC)
+    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    @test H.comm == MPI.COMM_WORLD
+    @test H.ilower == H.jlower == 1
+    @test H.iupper == H.jupper == 10
+    H = HYPREMatrix(CSR)
+    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    @test H.comm == MPI.COMM_WORLD
+    @test H.ilower == H.jlower == 1
+    @test H.iupper == H.jupper == 10
 end
 
 function tomain(x)
@@ -192,6 +210,13 @@ end
     @test h.IJVector != HYPRE_IJVector(C_NULL)
     @test h.ParVector != HYPRE_ParVector(C_NULL)
     @test_throws ArgumentError HYPREVector([1, 2], ilower, iupper)
+    # Default to owning all rows
+    h = HYPREVector(b)
+    @test h.IJVector != HYPRE_IJVector(C_NULL)
+    @test h.ParVector != HYPRE_ParVector(C_NULL)
+    @test h.comm == MPI.COMM_WORLD
+    @test h.ilower == 1
+    @test h.iupper == 10
 
     ilower, iupper = 1, 10
     b = rand(HYPRE_Complex, 10)

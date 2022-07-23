@@ -207,7 +207,6 @@ function Internals.to_hypre_data(A::SparseMatrixCSR, ilower, iupper)
     return nrows, ncols, rows, cols, values
 end
 
-# TODO: Default to ilower = 1, iupper = size(B, 1)?
 function HYPREMatrix(comm::MPI.Comm, B::Union{SparseMatrixCSC,SparseMatrixCSR}, ilower, iupper)
     A = HYPREMatrix(comm, ilower, iupper)
     nrows, ncols, rows, cols, values = Internals.to_hypre_data(B, ilower, iupper)
@@ -216,7 +215,7 @@ function HYPREMatrix(comm::MPI.Comm, B::Union{SparseMatrixCSC,SparseMatrixCSR}, 
     return A
 end
 
-HYPREMatrix(B::Union{SparseMatrixCSC,SparseMatrixCSR}, ilower, iupper) =
+HYPREMatrix(B::Union{SparseMatrixCSC,SparseMatrixCSR}, ilower=1, iupper=size(B, 1)) =
     HYPREMatrix(MPI.COMM_WORLD, B, ilower, iupper)
 
 #########################
@@ -231,7 +230,6 @@ function Internals.to_hypre_data(x::Vector, ilower, iupper)
 end
 # TODO: Internals.to_hypre_data(x::SparseVector, ilower, iupper) (?)
 
-# TODO: Default to ilower = 1, iupper = length(x)?
 function HYPREVector(comm::MPI.Comm, x::Vector, ilower, iupper)
     b = HYPREVector(comm, ilower, iupper)
     nvalues, indices, values = Internals.to_hypre_data(x, ilower, iupper)
@@ -240,7 +238,8 @@ function HYPREVector(comm::MPI.Comm, x::Vector, ilower, iupper)
     return b
 end
 
-HYPREVector(x::Vector, ilower, iupper) = HYPREVector(MPI.COMM_WORLD, x, ilower, iupper)
+HYPREVector(x::Vector, ilower=1, iupper=length(x)) =
+    HYPREVector(MPI.COMM_WORLD, x, ilower, iupper)
 
 function Base.copy!(x::Vector, h::HYPREVector)
     ilower, iupper = Internals.get_proc_rows(h)
