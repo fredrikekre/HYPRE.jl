@@ -1,18 +1,30 @@
 using HYPRE.LibHYPRE
 
-function generate_options(io, structname, prefix)
+function generate_options(io, structname, prefixes...)
     println(io, "")
     println(io, "function Internals.set_options(s::$(structname), kwargs)")
     println(io, "    solver = s.solver")
     println(io, "    for (k, v) in kwargs")
-    r = Regex("^" * prefix * "([A-Z].*)\$")
-    ns = sort!(filter!(x -> occursin(r, string(x)), names(LibHYPRE)))
+
+    ns = Tuple{Symbol,String}[]
+    for prefix in prefixes, n in names(LibHYPRE)
+        r = Regex("^" * prefix * "([A-Z].*)\$")
+        if (m = match(r, string(n)); m !== nothing)
+            m1 = String(m[1])
+            if (idx = findfirst(x -> x[2] == m1, ns); idx === nothing)
+                push!(ns, (n, m1))
+            else
+                @info "Ignoring $(n) since $(ns[idx][1]) already used."
+            end
+        end
+    end
+    sort!(ns; by = Base.first)
+
     first = true
-    for n in ns
+    for (n, k) in ns
         m = get(methods(getfield(LibHYPRE, n)), 1, nothing)
         m === nothing && continue
         nargs = m.nargs - 1
-        k = String(match(r, string(n))[1])
         print(io, "        $(first ? "" : "else")if k === :$(k)")
         println(io)
         if k == "Precond"
@@ -39,5 +51,5 @@ open(joinpath(@__DIR__, "..", "src", "solver_options.jl"), "w") do io
     println(io, "Internals.set_options(::HYPRESolver, kwargs) = nothing")
 
     generate_options(io, "BoomerAMG", "HYPRE_BoomerAMGSet")
-    generate_options(io, "PCG", "HYPRE_PCGSet")
+    generate_options(io, "PCG", "HYPRE_ParCSRPCGSet", "HYPRE_PCGSet")
 end

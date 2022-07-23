@@ -262,34 +262,34 @@ end
 function Internals.set_options(s::PCG, kwargs)
     solver = s.solver
     for (k, v) in kwargs
-        if k === :AbsoluteTol
-            @check HYPRE_PCGSetAbsoluteTol(solver, v)
-        elseif k === :AbsoluteTolFactor
+        if k === :AbsoluteTolFactor
             @check HYPRE_PCGSetAbsoluteTolFactor(solver, v)
         elseif k === :ConvergenceFactorTol
             @check HYPRE_PCGSetConvergenceFactorTol(solver, v)
-        elseif k === :Logging
-            @check HYPRE_PCGSetLogging(solver, v)
-        elseif k === :MaxIter
-            @check HYPRE_PCGSetMaxIter(solver, v)
-        elseif k === :Precond
-            Internals.set_precond(s, v)
-        elseif k === :PrintLevel
-            @check HYPRE_PCGSetPrintLevel(solver, v)
         elseif k === :RecomputeResidual
             @check HYPRE_PCGSetRecomputeResidual(solver, v)
         elseif k === :RecomputeResidualP
             @check HYPRE_PCGSetRecomputeResidualP(solver, v)
-        elseif k === :RelChange
-            @check HYPRE_PCGSetRelChange(solver, v)
         elseif k === :ResidualTol
             @check HYPRE_PCGSetResidualTol(solver, v)
+        elseif k === :AbsoluteTol
+            @check HYPRE_ParCSRPCGSetAbsoluteTol(solver, v)
+        elseif k === :Logging
+            @check HYPRE_ParCSRPCGSetLogging(solver, v)
+        elseif k === :MaxIter
+            @check HYPRE_ParCSRPCGSetMaxIter(solver, v)
+        elseif k === :Precond
+            Internals.set_precond(s, v)
+        elseif k === :PrintLevel
+            @check HYPRE_ParCSRPCGSetPrintLevel(solver, v)
+        elseif k === :RelChange
+            @check HYPRE_ParCSRPCGSetRelChange(solver, v)
         elseif k === :StopCrit
-            @check HYPRE_PCGSetStopCrit(solver, v)
+            @check HYPRE_ParCSRPCGSetStopCrit(solver, v)
         elseif k === :Tol
-            @check HYPRE_PCGSetTol(solver, v)
+            @check HYPRE_ParCSRPCGSetTol(solver, v)
         elseif k === :TwoNorm
-            @check HYPRE_PCGSetTwoNorm(solver, v)
+            @check HYPRE_ParCSRPCGSetTwoNorm(solver, v)
         end
     end
 end
