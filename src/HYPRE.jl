@@ -19,9 +19,9 @@ using .LibHYPRE: @check
 # Internal namespace to hide utility functions
 include("Internals.jl")
 
-###############################
-# HYPREMatrix and HYPREVector #
-###############################
+###############
+# HYPREMatrix #
+###############
 
 mutable struct HYPREMatrix # <: AbstractMatrix{HYPRE_Complex}
     #= const =# comm::MPI.Comm
@@ -49,6 +49,22 @@ function HYPREMatrix(comm::MPI.Comm, ilower::Integer,        iupper::Integer,
     return A
 end
 
+# Finalize the matrix and fetch the assembled matrix
+# This should be called after setting all the values
+function Internals.assemble_matrix(A::HYPREMatrix)
+    # Finalize after setting all values
+    @check HYPRE_IJMatrixAssemble(A.IJMatrix)
+    # Fetch the assembled CSR matrix
+    ParCSRMatrixRef = Ref{Ptr{Cvoid}}(C_NULL)
+    @check HYPRE_IJMatrixGetObject(A.IJMatrix, ParCSRMatrixRef)
+    A.ParCSRMatrix = convert(Ptr{HYPRE_ParCSRMatrix}, ParCSRMatrixRef[])
+    return A
+end
+
+###############
+# HYPREVector #
+###############
+
 mutable struct HYPREVector # <: AbstractVector{HYPRE_Complex}
     #= const =# comm::MPI.Comm
     #= const =# ilower::HYPRE_BigInt
@@ -70,18 +86,6 @@ function HYPREVector(comm::MPI.Comm, ilower::Integer, iupper::Integer)
     # Initialize to make ready for setting values
     @check HYPRE_IJVectorInitialize(b.IJVector)
     return b
-end
-
-# Finalize the matrix and fetch the assembled matrix
-# This should be called after setting all the values
-function Internals.assemble_matrix(A::HYPREMatrix)
-    # Finalize after setting all values
-    @check HYPRE_IJMatrixAssemble(A.IJMatrix)
-    # Fetch the assembled CSR matrix
-    ParCSRMatrixRef = Ref{Ptr{Cvoid}}(C_NULL)
-    @check HYPRE_IJMatrixGetObject(A.IJMatrix, ParCSRMatrixRef)
-    A.ParCSRMatrix = convert(Ptr{HYPRE_ParCSRMatrix}, ParCSRMatrixRef[])
-    return A
 end
 
 function Internals.assemble_vector(b::HYPREVector)
