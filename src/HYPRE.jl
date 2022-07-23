@@ -24,21 +24,19 @@ include("Internals.jl")
 ###############################
 
 mutable struct HYPREMatrix # <: AbstractMatrix{HYPRE_Complex}
+    #= const =# comm::MPI.Comm
+    #= const =# ilower::HYPRE_BigInt
+    #= const =# iupper::HYPRE_BigInt
+    #= const =# jlower::HYPRE_BigInt
+    #= const =# jupper::HYPRE_BigInt
     IJMatrix::HYPRE_IJMatrix
     ParCSRMatrix::HYPRE_ParCSRMatrix
-    HYPREMatrix() = new(C_NULL, C_NULL)
 end
 
-mutable struct HYPREVector # <: AbstractVector{HYPRE_Complex}
-    IJVector::HYPRE_IJVector
-    ParVector::HYPRE_ParVector
-    HYPREVector() = new(C_NULL, C_NULL)
-end
-
-# Create a new IJMatrix, set the object type, prepare for setting values
-function Internals.init_matrix(comm::MPI.Comm, ilower, iupper)
+function HYPREMatrix(comm::MPI.Comm, ilower::Integer,        iupper::Integer,
+                                     jlower::Integer=ilower, jupper::Integer=iupper)
     # Create the IJ matrix
-    A = HYPREMatrix()
+    A = HYPREMatrix(comm, ilower, iupper, jlower, jupper, C_NULL, C_NULL)
     IJMatrixRef = Ref{HYPRE_IJMatrix}(C_NULL)
     @check HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, IJMatrixRef)
     A.IJMatrix = IJMatrixRef[]
@@ -49,6 +47,29 @@ function Internals.init_matrix(comm::MPI.Comm, ilower, iupper)
     # Initialize to make ready for setting values
     @check HYPRE_IJMatrixInitialize(A.IJMatrix)
     return A
+end
+
+mutable struct HYPREVector # <: AbstractVector{HYPRE_Complex}
+    #= const =# comm::MPI.Comm
+    #= const =# ilower::HYPRE_BigInt
+    #= const =# iupper::HYPRE_BigInt
+    IJVector::HYPRE_IJVector
+    ParVector::HYPRE_ParVector
+end
+
+function HYPREVector(comm::MPI.Comm, ilower::Integer, iupper::Integer)
+    # Create the IJ vector
+    b = HYPREVector(comm, ilower, iupper, C_NULL, C_NULL)
+    b_ref = Ref{HYPRE_IJVector}(C_NULL)
+    @check HYPRE_IJVectorCreate(comm, ilower, iupper, b_ref)
+    b.IJVector = b_ref[]
+    # Attach a finalizer
+    finalizer(x -> HYPRE_IJVectorDestroy(x.IJVector), b) # Set storage type
+    # Set storage type
+    @check HYPRE_IJVectorSetObjectType(b.IJVector, HYPRE_PARCSR)
+    # Initialize to make ready for setting values
+    @check HYPRE_IJVectorInitialize(b.IJVector)
+    return b
 end
 
 # Finalize the matrix and fetch the assembled matrix
@@ -63,21 +84,6 @@ function Internals.assemble_matrix(A::HYPREMatrix)
     return A
 end
 
-function Internals.init_vector(comm::MPI.Comm, ilower, iupper)
-    # Create the IJ vector
-    b = HYPREVector()
-    b_ref = Ref{HYPRE_IJVector}(C_NULL)
-    @check HYPRE_IJVectorCreate(comm, ilower, iupper, b_ref)
-    b.IJVector = b_ref[]
-    # Attach a finalizer
-    finalizer(x -> HYPRE_IJVectorDestroy(x.IJVector), b) # Set storage type
-    # Set storage type
-    @check HYPRE_IJVectorSetObjectType(b.IJVector, HYPRE_PARCSR)
-    # Initialize to make ready for setting values
-    @check HYPRE_IJVectorInitialize(b.IJVector)
-    return b
-end
-
 function Internals.assemble_vector(b::HYPREVector)
     # Finalize after setting all values
     @check HYPRE_IJVectorAssemble(b.IJVector)
@@ -89,27 +95,29 @@ function Internals.assemble_vector(b::HYPREVector)
 end
 
 function Internals.get_proc_rows(b::HYPREVector)
-    jlower_ref = Ref{HYPRE_BigInt}()
-    jupper_ref = Ref{HYPRE_BigInt}()
-    @check HYPRE_IJVectorGetLocalRange(b.IJVector, jlower_ref, jupper_ref)
-    jlower = jlower_ref[]
-    jupper = jupper_ref[]
-    return jlower, jupper
+    # ilower_ref = Ref{HYPRE_BigInt}()
+    # iupper_ref = Ref{HYPRE_BigInt}()
+    # @check HYPRE_IJVectorGetLocalRange(b.IJVector, ilower_ref, iupper_ref)
+    # ilower = ilower_ref[]
+    # iupper = iupper_ref[]
+    # return ilower, iupper
+    return b.ilower, b.iupper
 end
 
 function Internals.get_comm(b::HYPREVector)
-    # The MPI communicator is (currently) the first field of the struct:
-    # https://github.com/hypre-space/hypre/blob/48de53e675af0e23baf61caa73d89fd9f478f453/src/IJ_mv/IJ_vector.h#L23
-    # Fingers crossed this doesn't change!
-    @assert b.IJVector != C_NULL
-    comm = unsafe_load(Ptr{MPI.Comm}(b.IJVector))
-    return comm
+    # # The MPI communicator is (currently) the first field of the struct:
+    # # https://github.com/hypre-space/hypre/blob/48de53e675af0e23baf61caa73d89fd9f478f453/src/IJ_mv/IJ_vector.h#L23
+    # # Fingers crossed this doesn't change!
+    # @assert b.IJVector != C_NULL
+    # comm = unsafe_load(Ptr{MPI.Comm}(b.IJVector))
+    # return comm
+    return b.comm
 end
 
 function Base.zero(b::HYPREVector)
     jlower, jupper = Internals.get_proc_rows(b)
     comm = Internals.get_comm(b)
-    x = Internals.init_vector(comm, jlower, jupper)
+    x = HYPREVector(comm, jlower, jupper)
     # TODO All values 0 by default? Looks like it... Work in progress patch to hypre to
     #      support IJVectorSetConstantValues analoguous to IJMatrixSetConstantValues.
     nvalues = jupper - jlower + 1
@@ -201,7 +209,7 @@ end
 
 # TODO: Default to ilower = 1, iupper = size(B, 1)?
 function HYPREMatrix(B::Union{SparseMatrixCSC,SparseMatrixCSR}, ilower, iupper, comm::MPI.Comm=MPI.COMM_WORLD)
-    A = Internals.init_matrix(comm, ilower, iupper)
+    A = HYPREMatrix(comm, ilower, iupper)
     nrows, ncols, rows, cols, values = Internals.to_hypre_data(B, ilower, iupper)
     @check HYPRE_IJMatrixSetValues(A.IJMatrix, nrows, ncols, rows, cols, values)
     Internals.assemble_matrix(A)
@@ -222,7 +230,7 @@ end
 
 # TODO: Default to ilower = 1, iupper = length(x)?
 function HYPREVector(x::Vector, ilower, iupper, comm=MPI.COMM_WORLD)
-    b = Internals.init_vector(comm, ilower, iupper)
+    b = HYPREVector(comm, ilower, iupper)
     nvalues, indices, values = Internals.to_hypre_data(x, ilower, iupper)
     @check HYPRE_IJVectorSetValues(b.IJVector, nvalues, indices, values)
     Internals.assemble_vector(b)
@@ -360,7 +368,7 @@ function HYPREMatrix(B::PSparseMatrix)
     # Fetch rows owned by this process
     ilower, iupper = Internals.get_proc_rows(B)
     # Create the IJ matrix
-    A = Internals.init_matrix(comm, ilower, iupper)
+    A = HYPREMatrix(comm, ilower, iupper)
     # Set all the values
     map_parts(B.values, B.rows.partition, B.cols.partition) do Bv, Br, Bc
         nrows, ncols, rows, cols, values = Internals.to_hypre_data(Bv, Br, Bc)
@@ -382,7 +390,7 @@ function HYPREVector(v::PVector)
     # Fetch rows owned by this process
     ilower, iupper = Internals.get_proc_rows(v)
     # Create the IJ vector
-    b = Internals.init_vector(comm, ilower, iupper)
+    b = HYPREVector(comm, ilower, iupper)
     # Set all the values
     map_parts(v.values, v.owned_values, v.rows.partition) do _, vo, vr
         ilower_part = vr.lid_to_gid[vr.oid_to_lid.start]

@@ -14,11 +14,7 @@ MPI.Init()
 HYPRE_Init()
 
 @testset "HYPREMatrix" begin
-    H = HYPREMatrix()
-    @test H.IJMatrix == HYPRE_IJMatrix(C_NULL)
-    @test H.ParCSRMatrix == HYPRE_ParCSRMatrix(C_NULL)
-
-    H = Internals.init_matrix(MPI.COMM_WORLD, 1, 5)
+    H = HYPREMatrix(MPI.COMM_WORLD, 1, 5)
     @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
     @test H.ParCSRMatrix == HYPRE_ParCSRMatrix(C_NULL)
     Internals.assemble_matrix(H)
@@ -164,11 +160,7 @@ end
 end
 
 @testset "HYPREVector" begin
-    h = HYPREVector()
-    @test h.IJVector == HYPRE_IJVector(C_NULL)
-    @test h.ParVector == HYPRE_ParVector(C_NULL)
-
-    h = Internals.init_vector(MPI.COMM_WORLD, 1, 5)
+    h = HYPREVector(MPI.COMM_WORLD, 1, 5)
     @test h.IJVector != HYPRE_IJVector(C_NULL)
     @test h.ParVector == HYPRE_ParVector(C_NULL)
     Internals.assemble_vector(h)
