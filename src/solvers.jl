@@ -11,11 +11,11 @@ abstract type HYPRESolver end
 # TODO: This should allocate x using the owned cols instead of rows of A/b, but currently
 #       it is assumed these are always equivalent.
 """
-    solve(solver::HYPRESolver, A::HYPREMatrix, b::HYPREVector)
+    solve(solver::HYPRESolver, A::HYPREMatrix, b::HYPREVector) -> HYPREVector
 
-Solve the linear system `A x = b` using `solver` and return the solution vector.
+Solve the linear system `A x = b` using `solver` and return the approximate solution.
 
-This method allocates the initial guess/output vector `x`, initialized to 0.
+This method allocates an initial guess/output vector `x`, initialized to 0.
 
 See also [`solve!`](@ref).
 """
@@ -25,6 +25,7 @@ solve(solver::HYPRESolver, A::HYPREMatrix, b::HYPREVector) = solve!(solver, zero
     solve!(solver::HYPRESolver, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
 
 Solve the linear system `A x = b` using `solver` with `x` as the initial guess.
+The approximate solution is stored in `x`.
 
 See also [`solve`](@ref).
 """
