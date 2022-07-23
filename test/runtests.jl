@@ -10,8 +10,8 @@ using SparseArrays
 using SparseMatricesCSR
 using Test
 
-MPI.Init()
-HYPRE_Init()
+# Init HYPRE and MPI
+HYPRE.Init()
 
 @testset "HYPREMatrix" begin
     H = HYPREMatrix(MPI.COMM_WORLD, 1, 5)
