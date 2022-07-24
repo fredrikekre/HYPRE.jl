@@ -4,6 +4,31 @@
 
 Internals.set_options(::HYPRESolver, kwargs) = nothing
 
+function Internals.set_options(s::BiCGSTAB, kwargs)
+    solver = s.solver
+    for (k, v) in kwargs
+        if k === :ConvergenceFactorTol
+            @check HYPRE_BiCGSTABSetConvergenceFactorTol(solver, v)
+        elseif k === :AbsoluteTol
+            @check HYPRE_ParCSRBiCGSTABSetAbsoluteTol(solver, v)
+        elseif k === :Logging
+            @check HYPRE_ParCSRBiCGSTABSetLogging(solver, v)
+        elseif k === :MaxIter
+            @check HYPRE_ParCSRBiCGSTABSetMaxIter(solver, v)
+        elseif k === :MinIter
+            @check HYPRE_ParCSRBiCGSTABSetMinIter(solver, v)
+        elseif k === :Precond
+            Internals.set_precond(s, v)
+        elseif k === :PrintLevel
+            @check HYPRE_ParCSRBiCGSTABSetPrintLevel(solver, v)
+        elseif k === :StopCrit
+            @check HYPRE_ParCSRBiCGSTABSetStopCrit(solver, v)
+        elseif k === :Tol
+            @check HYPRE_ParCSRBiCGSTABSetTol(solver, v)
+        end
+    end
+end
+
 function Internals.set_options(s::BoomerAMG, kwargs)
     solver = s.solver
     for (k, v) in kwargs

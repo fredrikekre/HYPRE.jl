@@ -275,6 +275,40 @@ end
     @test tomain(pbc) == tomain(pb)
 end
 
+@testset "BiCGSTAB" begin
+    # Setup
+    A = sprand(100, 100, 0.05); A = A'A + 5I
+    b = rand(100)
+    x = zeros(100)
+    A_h = HYPREMatrix(A)
+    b_h = HYPREVector(b)
+    x_h = HYPREVector(x)
+    # Solve
+    tol = 1e-9
+    bicg = HYPRE.BiCGSTAB(; Tol = tol)
+    HYPRE.solve!(bicg, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+    # Test without passing initial guess
+    x_h = HYPRE.solve(bicg, A_h, b_h)
+    copy!(x, x_h)
+    @test x ≈ A \ b atol=tol
+
+    # Solve with preconditioner
+    precond = HYPRE.BoomerAMG(; MaxIter = 1, Tol = 0.0)
+    bicg = HYPRE.BiCGSTAB(; Tol = tol, Precond = precond)
+    x_h = HYPREVector(zeros(100))
+    HYPRE.solve!(bicg, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+    # Test without passing initial guess
+    x_h = HYPRE.solve(bicg, A_h, b_h)
+    copy!(x, x_h)
+    @test x ≈ A \ b atol=tol
+end
+
 @testset "BoomerAMG" begin
     # Setup
     A = sprand(100, 100, 0.05); A = A'A + 5I

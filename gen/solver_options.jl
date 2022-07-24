@@ -50,6 +50,7 @@ open(joinpath(@__DIR__, "..", "src", "solver_options.jl"), "w") do io
     println(io, "")
     println(io, "Internals.set_options(::HYPRESolver, kwargs) = nothing")
 
+    generate_options(io, "BiCGSTAB", "HYPRE_ParCSRBiCGSTABSet", "HYPRE_BiCGSTABSet")
     generate_options(io, "BoomerAMG", "HYPRE_BoomerAMGSet")
     generate_options(io, "GMRES", "HYPRE_ParCSRGMRESSet", "HYPRE_GMRESSet")
     generate_options(io, "PCG", "HYPRE_ParCSRPCGSet", "HYPRE_PCGSet")

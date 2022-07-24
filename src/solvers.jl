@@ -52,6 +52,49 @@ function solve!(solver::HYPRESolver, x::PVector, A::PSparseMatrix, b::PVector)
 end
 
 
+#####################################
+## Concrete solver implementations ##
+#####################################
+
+
+####################
+# (ParCSR)BiCGSTAB #
+####################
+
+mutable struct BiCGSTAB <: HYPRESolver
+    solver::HYPRE_Solver
+    function BiCGSTAB(comm::MPI.Comm=MPI.COMM_WORLD; kwargs...)
+        solver = new(C_NULL)
+        solver_ref = Ref{HYPRE_Solver}(C_NULL)
+        @check HYPRE_ParCSRBiCGSTABCreate(comm, solver_ref)
+        solver.solver = solver_ref[]
+        # Attach a finalizer
+        finalizer(x -> HYPRE_ParCSRBiCGSTABDestroy(x.solver), solver)
+        # Set the options
+        Internals.set_options(solver, kwargs)
+        return solver
+    end
+end
+
+const ParCSRBiCGSTAB = BiCGSTAB
+
+function solve!(bicg::BiCGSTAB, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
+    @check HYPRE_ParCSRBiCGSTABSetup(bicg.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
+    @check HYPRE_ParCSRBiCGSTABSolve(bicg.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
+    return x
+end
+
+Internals.solve_func(::BiCGSTAB) = HYPRE_ParCSRBiCGSTABSolve
+Internals.setup_func(::BiCGSTAB) = HYPRE_ParCSRBiCGSTABSetup
+
+function Internals.set_precond(bicg::BiCGSTAB, p::HYPRESolver)
+    solve_f = Internals.solve_func(p)
+    setup_f = Internals.setup_func(p)
+    @check HYPRE_ParCSRBiCGSTABSetPrecond(bicg.solver, solve_f, setup_f, p.solver)
+    return nothing
+end
+
+
 #############
 # BoomerAMG #
 #############
