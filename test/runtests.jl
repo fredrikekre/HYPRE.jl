@@ -454,3 +454,19 @@ end
     x_p = HYPRE.solve(pcg, A_p, b_p)
     @test tomain(x_p) ≈ A \ b atol=tol
 end
+
+@testset "solve with SparseMatrixCS(C|R)" begin
+    # Setup
+    A = sprand(100, 100, 0.05); A = A'A + 5I
+    b = rand(100)
+    x = zeros(100)
+    # Solve
+    tol = 1e-9
+    pcg = HYPRE.PCG(; Tol = tol)
+    ## solve!
+    HYPRE.solve!(pcg, x, A, b)
+    @test x ≈ A \ b atol=tol
+    ## solve
+    x = HYPRE.solve(pcg, A, b)
+    @test x ≈ A \ b atol=tol
+end
