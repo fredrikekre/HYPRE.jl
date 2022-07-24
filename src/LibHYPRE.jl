@@ -9,47 +9,37 @@ include("../lib/LibHYPRE.jl")
 # pointers. Instead of creating function pointers to the Julia wrappers we can just look
 # up the pointer in the library and pass that.
 # TODO: Maybe this can be done automatically as post-process pass in Clang.jl
-function HYPRE_PCGSetPrecond(solver, precond::Function, precond_setup::Function, precond_solver)
-    precond_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond))
-    precond_setup_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond_setup))
-    return HYPRE_PCGSetPrecond(solver, precond_ptr, precond_setup_ptr, precond_solver)
+
+macro setprecond(fn)
+    for idx in 3:4
+        fn.args[idx] = Expr(:(::), fn.args[idx], :Function)
+    end
+    block = quote
+        precond_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond))
+        precond_setup_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond_setup))
+        return $(fn.args[1])(solver, precond_ptr, precond_setup_ptr, precond_solver)
+    end
+    r = Expr(:function, fn, block)
+    return r
 end
-function HYPRE_GMRESSetPrecond(solver, precond::Function, precond_setup::Function, precond_solver)
-    precond_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond))
-    precond_setup_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond_setup))
-    return HYPRE_GMRESSetPrecond(solver, precond_ptr, precond_setup_ptr, precond_solver)
-end
-function HYPRE_FlexGMRESSetPrecond(solver, precond::Function, precond_setup::Function, precond_solver)
-    precond_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond))
-    precond_setup_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond_setup))
-    return HYPRE_FlexGMRESSetPrecond(solver, precond_ptr, precond_setup_ptr, precond_solver)
-end
-function HYPRE_LGMRESSetPrecond(solver, precond::Function, precond_setup::Function, precond_solver)
-    precond_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond))
-    precond_setup_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond_setup))
-    return HYPRE_LGMRESSetPrecond(solver, precond_ptr, precond_setup_ptr, precond_solver)
-end
-function HYPRE_COGMRESSetPrecond(solver, precond::Function, precond_setup::Function, precond_solver)
-    precond_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond))
-    precond_setup_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond_setup))
-    return HYPRE_COGMRESSetPrecond(solver, precond_ptr, precond_setup_ptr, precond_solver)
-end
-function HYPRE_BiCGSTABSetPrecond(solver, precond::Function, precond_setup::Function, precond_solver)
-    precond_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond))
-    precond_setup_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond_setup))
-    return HYPRE_BiCGSTABSetPrecond(solver, precond_ptr, precond_setup_ptr, precond_solver)
-end
-function HYPRE_CGNRSetPrecond(solver, precond::Function, precondT::Function, precond_setup::Function, precond_solver)
-    precond_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond))
-    precondT_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precondT))
-    precond_setup_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond_setup))
-    return HYPRE_CGNRSetPrecond(solver, precond_ptr, precondT_ptr, precond_setup_ptr, precond_solver)
-end
-function HYPRE_LOBPCGSetPrecond(solver, precond::Function, precond_setup::Function, precond_solver)
-    precond_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond))
-    precond_setup_ptr = dlsym(HYPRE_jll.libHYPRE_handle, Symbol(precond_setup))
-    return HYPRE_LOBPCGSetPrecond(solver, precond_ptr, precond_setup_ptr, precond_solver)
-end
+
+@setprecond HYPRE_BiCGSTABSetPrecond(solver, precond, precond_setup, precond_solver)
+# @setprecond HYPRE_CGNRSetPrecond(solver, precond, precondT, precond_setup, precond_solver)
+@setprecond HYPRE_COGMRESSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_FlexGMRESSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_GMRESSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_LGMRESSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_LOBPCGSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_PCGSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_ParCSRBiCGSTABSetPrecond(solver, precond, precond_setup, precond_solver)
+# @setprecond HYPRE_ParCSRCGNRSetPrecond(solver, precond, precondT, precond_setup, precond_solver)
+@setprecond HYPRE_ParCSRCOGMRESSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_ParCSRFlexGMRESSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_ParCSRGMRESSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_ParCSRHybridSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_ParCSRLGMRESSetPrecond(solver, precond, precond_setup, precond_solver)
+@setprecond HYPRE_ParCSRPCGSetPrecond(solver, precond, precond_setup, precond_solver)
+
 
 # Macro for checking LibHYPRE return codes
 macro check(arg)
