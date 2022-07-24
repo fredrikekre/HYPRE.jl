@@ -81,6 +81,42 @@ Internals.solve_func(::BoomerAMG) = HYPRE_BoomerAMGSolve
 Internals.setup_func(::BoomerAMG) = HYPRE_BoomerAMGSetup
 
 
+#########
+# GMRES #
+#########
+
+mutable struct GMRES <: HYPRESolver
+    solver::HYPRE_Solver
+    function GMRES(comm::MPI.Comm=MPI.COMM_WORLD; kwargs...)
+        solver = new(C_NULL)
+        solver_ref = Ref{HYPRE_Solver}(C_NULL)
+        @check HYPRE_ParCSRGMRESCreate(comm, solver_ref)
+        solver.solver = solver_ref[]
+        # Attach a finalizer
+        finalizer(x -> HYPRE_ParCSRGMRESDestroy(x.solver), solver)
+        # Set the options
+        Internals.set_options(solver, kwargs)
+        return solver
+    end
+end
+
+function solve!(gmres::GMRES, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
+    @check HYPRE_ParCSRGMRESSetup(gmres.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
+    @check HYPRE_ParCSRGMRESSolve(gmres.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
+    return x
+end
+
+Internals.solve_func(::GMRES) = HYPRE_ParCSRGMRESSetup
+Internals.setup_func(::GMRES) = HYPRE_ParCSRGMRESSolve
+
+function Internals.set_precond(gmres::GMRES, p::HYPRESolver)
+    solve_f = Internals.solve_func(p)
+    setup_f = Internals.setup_func(p)
+    @check HYPRE_ParCSRGMRESSetPrecond(gmres.solver, solve_f, setup_f, p.solver)
+    return nothing
+end
+
+
 ###############
 # (ParCSR)PCG #
 ###############

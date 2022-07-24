@@ -297,6 +297,40 @@ end
     @test x ≈ A \ b atol=tol
 end
 
+@testset "GMRES" begin
+    # Setup
+    A = sprand(100, 100, 0.05); A = A'A + 5I
+    b = rand(100)
+    x = zeros(100)
+    A_h = HYPREMatrix(A)
+    b_h = HYPREVector(b)
+    x_h = HYPREVector(x)
+    # Solve
+    tol = 1e-9
+    gmres = HYPRE.GMRES(; Tol = tol)
+    HYPRE.solve!(gmres, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+    # Test without passing initial guess
+    x_h = HYPRE.solve(gmres, A_h, b_h)
+    copy!(x, x_h)
+    @test x ≈ A \ b atol=tol
+
+    # Solve with preconditioner
+    precond = HYPRE.BoomerAMG(; MaxIter = 1, Tol = 0.0)
+    gmres = HYPRE.GMRES(; Tol = tol, Precond = precond)
+    x_h = HYPREVector(zeros(100))
+    HYPRE.solve!(gmres, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+    # Test without passing initial guess
+    x_h = HYPRE.solve(gmres, A_h, b_h)
+    copy!(x, x_h)
+    @test x ≈ A \ b atol=tol
+end
+
 @testset "(ParCSR)PCG" begin
     # Setup
     A = sprand(100, 100, 0.05); A = A'A + 5I

@@ -259,6 +259,37 @@ function Internals.set_options(s::BoomerAMG, kwargs)
     end
 end
 
+function Internals.set_options(s::GMRES, kwargs)
+    solver = s.solver
+    for (k, v) in kwargs
+        if k === :ConvergenceFactorTol
+            @check HYPRE_GMRESSetConvergenceFactorTol(solver, v)
+        elseif k === :RelChange
+            @check HYPRE_GMRESSetRelChange(solver, v)
+        elseif k === :SkipRealResidualCheck
+            @check HYPRE_GMRESSetSkipRealResidualCheck(solver, v)
+        elseif k === :AbsoluteTol
+            @check HYPRE_ParCSRGMRESSetAbsoluteTol(solver, v)
+        elseif k === :KDim
+            @check HYPRE_ParCSRGMRESSetKDim(solver, v)
+        elseif k === :Logging
+            @check HYPRE_ParCSRGMRESSetLogging(solver, v)
+        elseif k === :MaxIter
+            @check HYPRE_ParCSRGMRESSetMaxIter(solver, v)
+        elseif k === :MinIter
+            @check HYPRE_ParCSRGMRESSetMinIter(solver, v)
+        elseif k === :Precond
+            Internals.set_precond(s, v)
+        elseif k === :PrintLevel
+            @check HYPRE_ParCSRGMRESSetPrintLevel(solver, v)
+        elseif k === :StopCrit
+            @check HYPRE_ParCSRGMRESSetStopCrit(solver, v)
+        elseif k === :Tol
+            @check HYPRE_ParCSRGMRESSetTol(solver, v)
+        end
+    end
+end
+
 function Internals.set_options(s::PCG, kwargs)
     solver = s.solver
     for (k, v) in kwargs
