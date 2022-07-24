@@ -41,14 +41,39 @@ end
 @setprecond HYPRE_ParCSRPCGSetPrecond(solver, precond, precond_setup, precond_solver)
 
 
+struct HYPREError <: Exception
+    fn::Symbol
+    ierr::HYPRE_Int
+end
+
+# See HYPRE_DescribeError(HYPRE_Int ierr, char *msg)
+function Base.showerror(io::IO, h::HYPREError)
+    print(io, "LibHYPRE.$(h.fn) returned error code $(h.ierr):")
+    if (h.ierr & HYPRE_ERROR_GENERIC) != 0
+        print(io, " [Generic error]")
+    end
+    if (h.ierr & HYPRE_ERROR_MEMORY) != 0
+        print(io, " [Memory error]")
+    end
+    if (h.ierr & HYPRE_ERROR_ARG) != 0
+        arg = h.ierr >> 3 & 31 # See HYPRE_GetErrorArg()
+        print(io, " [Error in argument $arg]")
+    end
+    if (h.ierr & HYPRE_ERROR_CONV) != 0
+        print(io, " [Method did not converge]")
+    end
+    return nothing
+end
+
 # Macro for checking LibHYPRE return codes
 macro check(arg)
     Meta.isexpr(arg, :call) || throw(ArgumentError("wrong usage of @check"))
-    msg = "LibHYPRE.$(arg.args[1]) returned non-zero return code: "
     return quote
         r = $(esc(arg))
         if r != 0
-            error(string($msg, r))
+            # Since we throw here we can clear the errors (I think?)
+            HYPRE_ClearAllErrors()
+            throw(HYPREError($(QuoteNode(arg.args[1])), r))
         end
         r
     end
