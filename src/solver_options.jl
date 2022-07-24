@@ -25,6 +25,8 @@ function Internals.set_options(s::BiCGSTAB, kwargs)
             @check HYPRE_ParCSRBiCGSTABSetStopCrit(solver, v)
         elseif k === :Tol
             @check HYPRE_ParCSRBiCGSTABSetTol(solver, v)
+        else
+            throw(ArgumentError("unknown option $k for HYPRE.BiCGSTAB"))
         end
     end
 end
@@ -280,6 +282,8 @@ function Internals.set_options(s::BoomerAMG, kwargs)
             @check HYPRE_BoomerAMGSetTruncFactor(solver, v)
         elseif k === :Variant
             @check HYPRE_BoomerAMGSetVariant(solver, v)
+        else
+            throw(ArgumentError("unknown option $k for HYPRE.BoomerAMG"))
         end
     end
 end
@@ -311,6 +315,8 @@ function Internals.set_options(s::GMRES, kwargs)
             @check HYPRE_ParCSRGMRESSetStopCrit(solver, v)
         elseif k === :Tol
             @check HYPRE_ParCSRGMRESSetTol(solver, v)
+        else
+            throw(ArgumentError("unknown option $k for HYPRE.GMRES"))
         end
     end
 end
@@ -346,6 +352,8 @@ function Internals.set_options(s::PCG, kwargs)
             @check HYPRE_ParCSRPCGSetTol(solver, v)
         elseif k === :TwoNorm
             @check HYPRE_ParCSRPCGSetTwoNorm(solver, v)
+        else
+            throw(ArgumentError("unknown option $k for HYPRE.PCG"))
         end
     end
 end

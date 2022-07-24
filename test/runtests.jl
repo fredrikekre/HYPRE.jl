@@ -276,6 +276,11 @@ end
 end
 
 @testset "BiCGSTAB" begin
+    # Solver constructor and options
+    @test_throws(
+        ArgumentError("unknown option UnknownOption for HYPRE.BiCGSTAB"),
+        HYPRE.BiCGSTAB(; UnknownOption = 1)
+    )
     # Setup
     A = sprand(100, 100, 0.05); A = A'A + 5I
     b = rand(100)
@@ -310,6 +315,11 @@ end
 end
 
 @testset "BoomerAMG" begin
+    # Solver constructor and options
+    @test_throws(
+        ArgumentError("unknown option UnknownOption for HYPRE.BoomerAMG"),
+        HYPRE.BoomerAMG(; UnknownOption = 1)
+    )
     # Setup
     A = sprand(100, 100, 0.05); A = A'A + 5I
     b = rand(100)
@@ -332,6 +342,11 @@ end
 end
 
 @testset "GMRES" begin
+    # Solver constructor and options
+    @test_throws(
+        ArgumentError("unknown option UnknownOption for HYPRE.GMRES"),
+        HYPRE.GMRES(; UnknownOption = 1)
+    )
     # Setup
     A = sprand(100, 100, 0.05); A = A'A + 5I
     b = rand(100)
@@ -366,6 +381,11 @@ end
 end
 
 @testset "(ParCSR)PCG" begin
+    # Solver constructor and options
+    @test_throws(
+        ArgumentError("unknown option UnknownOption for HYPRE.PCG"),
+        HYPRE.PCG(; UnknownOption = 1)
+    )
     # Setup
     A = sprand(100, 100, 0.05); A = A'A + 5I
     b = rand(100)

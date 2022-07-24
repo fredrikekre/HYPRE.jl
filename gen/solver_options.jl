@@ -38,6 +38,8 @@ function generate_options(io, structname, prefixes...)
         end
         first = false
     end
+    println(io, "        else")
+    println(io, "            throw(ArgumentError(\"unknown option \$k for HYPRE.$structname\"))")
     println(io, "        end")
     println(io, "    end")
     println(io, "end")
