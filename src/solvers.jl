@@ -40,8 +40,7 @@ solve!(pcg::HYPRESolver, x::HYPREVector, A::HYPREMatrix, ::HYPREVector)
 
 function solve(solver::HYPRESolver, A::PSparseMatrix, b::PVector)
     hypre_x = solve(solver, HYPREMatrix(A), HYPREVector(b))
-    # TODO: This could be a HYPREVector -> PVector conversion
-    x = copy!(copy(b), hypre_x)
+    x = copy!(similar(b, HYPRE_Complex), hypre_x)
     return x
 end
 function solve!(solver::HYPRESolver, x::PVector, A::PSparseMatrix, b::PVector)
@@ -59,7 +58,7 @@ end
 
 function solve(solver::HYPRESolver, A::Union{SparseMatrixCSC,SparseMatrixCSR}, b::Vector)
     hypre_x = solve(solver, HYPREMatrix(A), HYPREVector(b))
-    x = copy!(copy(b), hypre_x)
+    x = copy!(similar(b, HYPRE_Complex), hypre_x)
     return x
 end
 function solve!(solver::HYPRESolver, x::Vector, A::Union{SparseMatrixCSC,SparseMatrixCSR}, b::Vector)
