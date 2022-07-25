@@ -269,11 +269,12 @@ HYPREVector(x::Vector, ilower=1, iupper=length(x)) =
     HYPREVector(MPI.COMM_WORLD, x, ilower, iupper)
 
 # TODO: Other eltypes could be support by using a intermediate buffer
-function Base.copy!(x::Vector{HYPRE_Complex}, h::HYPREVector)
+function Base.copyto!(x::Vector{HYPRE_Complex}, h::HYPREVector)
     ilower, iupper = Internals.get_proc_rows(h)
     nvalues = iupper - ilower + 1
     if length(x) != nvalues
-        throw(ArgumentError("different lengths"))
+        # TODO: This isn't required by the copyto! interface, only that there is enough room
+        throw(ArgumentError("length(dst) != length(src)"))
     end
     indices = collect(HYPRE_BigInt, ilower:iupper)
     @check HYPRE_IJVectorGetValues(h.IJVector, nvalues, indices, x)
@@ -455,7 +456,7 @@ function HYPREVector(v::PVector)
 end
 
 # TODO: Other eltypes could be support by using a intermediate buffer
-function Base.copy!(v::PVector{HYPRE_Complex}, h::HYPREVector)
+function Base.copyto!(v::PVector{HYPRE_Complex}, h::HYPREVector)
     ilower_v, iupper_v = Internals.get_proc_rows(v)
     ilower_h, iupper_h = Internals.get_proc_rows(h)
     if ilower_v != ilower_h && iupper_v != iupper_h

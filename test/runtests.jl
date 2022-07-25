@@ -191,11 +191,11 @@ end
     @test h.IJVector != HYPRE_IJVector(C_NULL)
     @test h.ParVector != HYPRE_ParVector(C_NULL)
 
-    # Base.zero(::HYPREVector) and Base.copy!(::Vector, HYPREVector)
+    # Base.zero(::HYPREVector) and Base.copyto!(::Vector, HYPREVector)
     b = rand(10)
     h = HYPREVector(b, 1, 10)
     z = zero(h)
-    b′ = copy!(b, z)
+    b′ = copyto!(b, z)
     @test b === b′
     @test iszero(b)
 end
@@ -254,7 +254,7 @@ end
     @test H.IJVector != HYPRE_IJVector(C_NULL)
     @test H.ParVector != HYPRE_ParVector(C_NULL)
     pbc = fill!(copy(pb), 0)
-    copy!(pbc, H)
+    copyto!(pbc, H)
     @test tomain(pbc) == tomain(pb)
     # MPI backend
     backend = MPIBackend()
@@ -271,7 +271,7 @@ end
     @test H.IJVector != HYPRE_IJVector(C_NULL)
     @test H.ParVector != HYPRE_ParVector(C_NULL)
     pbc = fill!(copy(pb), 0)
-    copy!(pbc, H)
+    copyto!(pbc, H)
     @test tomain(pbc) == tomain(pb)
 end
 
@@ -292,12 +292,12 @@ end
     tol = 1e-9
     bicg = HYPRE.BiCGSTAB(; Tol = tol)
     HYPRE.solve!(bicg, x_h, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
     # Test without passing initial guess
     x_h = HYPRE.solve(bicg, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     @test x ≈ A \ b atol=tol
 
     # Solve with preconditioner
@@ -305,12 +305,12 @@ end
     bicg = HYPRE.BiCGSTAB(; Tol = tol, Precond = precond)
     x_h = HYPREVector(zeros(100))
     HYPRE.solve!(bicg, x_h, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
     # Test without passing initial guess
     x_h = HYPRE.solve(bicg, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     @test x ≈ A \ b atol=tol
 end
 
@@ -332,12 +332,12 @@ end
     tol = 1e-9
     amg = HYPRE.BoomerAMG(; Tol = tol)
     HYPRE.solve!(amg, x_h, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
     # Test without passing initial guess
     x_h = HYPRE.solve(amg, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     @test x ≈ A \ b atol=tol
 end
 
@@ -358,12 +358,12 @@ end
     tol = 1e-9
     gmres = HYPRE.GMRES(; Tol = tol)
     HYPRE.solve!(gmres, x_h, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
     # Test without passing initial guess
     x_h = HYPRE.solve(gmres, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     @test x ≈ A \ b atol=tol
 
     # Solve with preconditioner
@@ -371,12 +371,12 @@ end
     gmres = HYPRE.GMRES(; Tol = tol, Precond = precond)
     x_h = HYPREVector(zeros(100))
     HYPRE.solve!(gmres, x_h, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
     # Test without passing initial guess
     x_h = HYPRE.solve(gmres, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     @test x ≈ A \ b atol=tol
 end
 
@@ -398,24 +398,24 @@ end
     tol = 1e-9
     pcg = HYPRE.PCG(; Tol = tol)
     HYPRE.solve!(pcg, x_h, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
     # Test without passing initial guess
     x_h = HYPRE.solve(pcg, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     @test x ≈ A \ b atol=tol
     # Solve with AMG preconditioner
     precond = HYPRE.BoomerAMG(; MaxIter = 1, Tol = 0.0)
     pcg = HYPRE.PCG(; Tol = tol, Precond = precond)
     x_h = HYPREVector(zeros(100))
     HYPRE.solve!(pcg, x_h, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
     # Test without passing initial guess
     x_h = HYPRE.solve(pcg, A_h, b_h)
-    copy!(x, x_h)
+    copyto!(x, x_h)
     @test x ≈ A \ b atol=tol
 end
 
