@@ -268,7 +268,8 @@ end
 HYPREVector(x::Vector, ilower=1, iupper=length(x)) =
     HYPREVector(MPI.COMM_WORLD, x, ilower, iupper)
 
-function Base.copy!(x::Vector, h::HYPREVector)
+# TODO: Other eltypes could be support by using a intermediate buffer
+function Base.copy!(x::Vector{HYPRE_Complex}, h::HYPREVector)
     ilower, iupper = Internals.get_proc_rows(h)
     nvalues = iupper - ilower + 1
     if length(x) != nvalues
@@ -453,11 +454,8 @@ function HYPREVector(v::PVector)
     return b
 end
 
-function Base.copy!(v::PVector, h::HYPREVector)
-    if eltype(v) !== HYPRE_Complex
-        # TODO: This could be allowed with a temporary buffer.
-        throw(ArgumentError("mismatching element types"))
-    end
+# TODO: Other eltypes could be support by using a intermediate buffer
+function Base.copy!(v::PVector{HYPRE_Complex}, h::HYPREVector)
     ilower_v, iupper_v = Internals.get_proc_rows(v)
     ilower_h, iupper_h = Internals.get_proc_rows(h)
     if ilower_v != ilower_h && iupper_v != iupper_h
