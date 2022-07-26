@@ -1,5 +1,9 @@
 # Example translated from C to Julia based on this original source (MIT license):
 # https://github.com/hypre-space/hypre/blob/ac9d7d0d7b43cd3d0c7f24ec5d64b58fbf900097/src/examples/ex5.c
+#
+# Note that this is more or less a line-by-line translation (Julia and C are surprisingly
+# similar!), and therefore the code here is not very "Julian" in the style. Nevertheless, it
+# showcases how HYPRE.jl can be used to interact with the C API directly.
 
 # Example 5
 #
