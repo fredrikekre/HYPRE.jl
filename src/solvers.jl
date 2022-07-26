@@ -96,8 +96,8 @@ end
 const ParCSRBiCGSTAB = BiCGSTAB
 
 function solve!(bicg::BiCGSTAB, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_ParCSRBiCGSTABSetup(bicg.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
-    @check HYPRE_ParCSRBiCGSTABSolve(bicg.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
+    @check HYPRE_ParCSRBiCGSTABSetup(bicg.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ParCSRBiCGSTABSolve(bicg.solver, A.parmatrix, b.parvector, x.parvector)
     return x
 end
 
@@ -132,8 +132,8 @@ mutable struct BoomerAMG <: HYPRESolver
 end
 
 function solve!(amg::BoomerAMG, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_BoomerAMGSetup(amg.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
-    @check HYPRE_BoomerAMGSolve(amg.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
+    @check HYPRE_BoomerAMGSetup(amg.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_BoomerAMGSolve(amg.solver, A.parmatrix, b.parvector, x.parvector)
     return x
 end
 
@@ -161,8 +161,8 @@ mutable struct GMRES <: HYPRESolver
 end
 
 function solve!(gmres::GMRES, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_ParCSRGMRESSetup(gmres.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
-    @check HYPRE_ParCSRGMRESSolve(gmres.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
+    @check HYPRE_ParCSRGMRESSetup(gmres.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ParCSRGMRESSolve(gmres.solver, A.parmatrix, b.parvector, x.parvector)
     return x
 end
 
@@ -199,8 +199,8 @@ end
 const ParCSRPCG = PCG
 
 function solve!(pcg::PCG, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_ParCSRPCGSetup(pcg.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
-    @check HYPRE_ParCSRPCGSolve(pcg.solver, A.ParCSRMatrix, b.ParVector, x.ParVector)
+    @check HYPRE_ParCSRPCGSetup(pcg.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ParCSRPCGSolve(pcg.solver, A.parmatrix, b.parvector, x.parvector)
     return x
 end
 

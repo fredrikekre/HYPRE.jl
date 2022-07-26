@@ -9,13 +9,13 @@ This is useful when you need some functionality from the library which can't be 
 through the Julia interface. Many functions require passing a reference to a matrix/vector
 or a solver. These can be obtained as follows:
 
-| C type signature     | Argument to pass                        |
-|:---------------------|:----------------------------------------|
-| `HYPRE_IJMatrix`     | `A.IJMatrix` where `A::HYPREMatrix`     |
-| `HYPRE_IJVector`     | `b.IJVector` where `b::HYPREVector`     |
-| `HYPRE_ParCSRMatrix` | `A.ParCSRMatrix` where `A::HYPREMatrix` |
-| `HYPRE_ParVector`    | `b.ParVector` where `b::HYPREVector`    |
-| `HYPRE_Solver`       | `s.Solver` where `s::HYPRESolver`       |
+| C type signature     | Argument to pass                     |
+|:---------------------|:-------------------------------------|
+| `HYPRE_IJMatrix`     | `A.ijmatrix`  where `A::HYPREMatrix` |
+| `HYPRE_ParCSRMatrix` | `A.parmatrix` where `A::HYPREMatrix` |
+| `HYPRE_IJVector`     | `b.ijvector`  where `b::HYPREVector` |
+| `HYPRE_ParVector`    | `b.parvector` where `b::HYPREVector` |
+| `HYPRE_Solver`       | `s.solver`    where `s::HYPRESolver` |
 
 [^1]: Bindings are generated using
       [Clang.jl](https://github.com/JuliaInterop/Clang.jl), see

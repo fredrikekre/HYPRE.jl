@@ -15,11 +15,11 @@ HYPRE.Init()
 
 @testset "HYPREMatrix" begin
     H = HYPREMatrix(MPI.COMM_WORLD, 1, 5)
-    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
-    @test H.ParCSRMatrix == HYPRE_ParCSRMatrix(C_NULL)
+    @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.parmatrix == HYPRE_ParCSRMatrix(C_NULL)
     Internals.assemble_matrix(H)
-    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
-    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
 end
 
 @testset "HYPREMatrix(::SparseMatrixCS(C|R))" begin
@@ -54,31 +54,31 @@ end
     @test CSC == CSR
 
     H = HYPREMatrix(CSC, ilower, iupper)
-    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
-    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
     H = HYPREMatrix(MPI.COMM_WORLD, CSC, ilower, iupper)
-    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
-    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
 
     H = HYPREMatrix(CSR, ilower, iupper)
-    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
-    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
     H = HYPREMatrix(MPI.COMM_WORLD, CSR, ilower,  iupper)
-    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
-    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
 
     # Default to owning all rows
     CSC = sprand(10, 10, 0.3)
     CSR = sparsecsr(findnz(CSC)..., size(CSC)...)
     H = HYPREMatrix(CSC)
-    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
-    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
     @test H.comm == MPI.COMM_WORLD
     @test H.ilower == H.jlower == 1
     @test H.iupper == H.jupper == 10
     H = HYPREMatrix(CSR)
-    @test H.IJMatrix != HYPRE_IJMatrix(C_NULL)
-    @test H.ParCSRMatrix != HYPRE_ParCSRMatrix(C_NULL)
+    @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
+    @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
     @test H.comm == MPI.COMM_WORLD
     @test H.ilower == H.jlower == 1
     @test H.iupper == H.jupper == 10
@@ -185,11 +185,11 @@ end
 
 @testset "HYPREVector" begin
     h = HYPREVector(MPI.COMM_WORLD, 1, 5)
-    @test h.IJVector != HYPRE_IJVector(C_NULL)
-    @test h.ParVector == HYPRE_ParVector(C_NULL)
+    @test h.ijvector != HYPRE_IJVector(C_NULL)
+    @test h.parvector == HYPRE_ParVector(C_NULL)
     Internals.assemble_vector(h)
-    @test h.IJVector != HYPRE_IJVector(C_NULL)
-    @test h.ParVector != HYPRE_ParVector(C_NULL)
+    @test h.ijvector != HYPRE_IJVector(C_NULL)
+    @test h.parvector != HYPRE_ParVector(C_NULL)
 
     # Base.zero(::HYPREVector) and Base.copy!(::Vector, HYPREVector)
     b = rand(10)
@@ -204,16 +204,16 @@ end
     ilower, iupper = 1, 10
     b = rand(HYPRE_Complex, 10)
     h = HYPREVector(b, ilower, iupper)
-    @test h.IJVector != HYPRE_IJVector(C_NULL)
-    @test h.ParVector != HYPRE_ParVector(C_NULL)
+    @test h.ijvector != HYPRE_IJVector(C_NULL)
+    @test h.parvector != HYPRE_ParVector(C_NULL)
     h = HYPREVector(MPI.COMM_WORLD, b, ilower, iupper)
-    @test h.IJVector != HYPRE_IJVector(C_NULL)
-    @test h.ParVector != HYPRE_ParVector(C_NULL)
+    @test h.ijvector != HYPRE_IJVector(C_NULL)
+    @test h.parvector != HYPRE_ParVector(C_NULL)
     @test_throws ArgumentError HYPREVector([1, 2], ilower, iupper)
     # Default to owning all rows
     h = HYPREVector(b)
-    @test h.IJVector != HYPRE_IJVector(C_NULL)
-    @test h.ParVector != HYPRE_ParVector(C_NULL)
+    @test h.ijvector != HYPRE_IJVector(C_NULL)
+    @test h.parvector != HYPRE_ParVector(C_NULL)
     @test h.comm == MPI.COMM_WORLD
     @test h.ilower == 1
     @test h.iupper == 10
@@ -251,8 +251,8 @@ end
     assemble!(pb)
     @test tomain(pb) == [i in 4:6 ? 2x : x for (i, x) in zip(eachindex(b), b)]
     H = HYPREVector(pb)
-    @test H.IJVector != HYPRE_IJVector(C_NULL)
-    @test H.ParVector != HYPRE_ParVector(C_NULL)
+    @test H.ijvector != HYPRE_IJVector(C_NULL)
+    @test H.parvector != HYPRE_ParVector(C_NULL)
     pbc = fill!(copy(pb), 0)
     copy!(pbc, H)
     @test tomain(pbc) == tomain(pb)
@@ -268,8 +268,8 @@ end
     assemble!(pb)
     @test tomain(pb) == b
     H = HYPREVector(pb)
-    @test H.IJVector != HYPRE_IJVector(C_NULL)
-    @test H.ParVector != HYPRE_ParVector(C_NULL)
+    @test H.ijvector != HYPRE_IJVector(C_NULL)
+    @test H.parvector != HYPRE_ParVector(C_NULL)
     pbc = fill!(copy(pb), 0)
     copy!(pbc, H)
     @test tomain(pbc) == tomain(pb)
