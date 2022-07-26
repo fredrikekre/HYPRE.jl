@@ -16,6 +16,7 @@ makedocs(
     modules = [HYPRE],
     pages = Any[
         "Home" => "index.md",
+        "hypre-matrix-vector.md",
         "libhypre.md",
     ],
     draft = liveserver,
