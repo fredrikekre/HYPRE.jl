@@ -73,13 +73,13 @@ end
     H = HYPREMatrix(CSC)
     @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
     @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
-    @test H.comm == MPI.COMM_WORLD
+    @test H.comm == MPI.COMM_SELF
     @test H.ilower == H.jlower == 1
     @test H.iupper == H.jupper == 10
     H = HYPREMatrix(CSR)
     @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
     @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
-    @test H.comm == MPI.COMM_WORLD
+    @test H.comm == MPI.COMM_SELF
     @test H.ilower == H.jlower == 1
     @test H.iupper == H.jupper == 10
 end
@@ -214,7 +214,7 @@ end
     h = HYPREVector(b)
     @test h.ijvector != HYPRE_IJVector(C_NULL)
     @test h.parvector != HYPRE_ParVector(C_NULL)
-    @test h.comm == MPI.COMM_WORLD
+    @test h.comm == MPI.COMM_SELF
     @test h.ilower == 1
     @test h.iupper == 10
 

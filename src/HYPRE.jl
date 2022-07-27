@@ -243,7 +243,7 @@ function HYPREMatrix(comm::MPI.Comm, B::Union{SparseMatrixCSC,SparseMatrixCSR}, 
 end
 
 HYPREMatrix(B::Union{SparseMatrixCSC,SparseMatrixCSR}, ilower=1, iupper=size(B, 1)) =
-    HYPREMatrix(MPI.COMM_WORLD, B, ilower, iupper)
+    HYPREMatrix(MPI.COMM_SELF, B, ilower, iupper)
 
 #########################
 # Vector -> HYPREVector #
@@ -266,7 +266,7 @@ function HYPREVector(comm::MPI.Comm, x::Vector, ilower, iupper)
 end
 
 HYPREVector(x::Vector, ilower=1, iupper=length(x)) =
-    HYPREVector(MPI.COMM_WORLD, x, ilower, iupper)
+    HYPREVector(MPI.COMM_SELF, x, ilower, iupper)
 
 # TODO: Other eltypes could be support by using a intermediate buffer
 function Base.copy!(x::Vector{HYPRE_Complex}, h::HYPREVector)
@@ -376,7 +376,7 @@ end
 function Internals.get_comm(A::Union{PSparseMatrix{<:Any,<:M}, PVector{<:Any,<:M}}) where M <: MPIData
     return A.rows.partition.comm
 end
-Internals.get_comm(_::Union{PSparseMatrix,PVector}) = MPI.COMM_WORLD
+Internals.get_comm(_::Union{PSparseMatrix,PVector}) = MPI.COMM_SELF
 
 function Internals.get_proc_rows(A::Union{PSparseMatrix{<:Any,<:M}, PVector{<:Any,<:M}}) where M <: MPIData
     r = A.rows.partition.part

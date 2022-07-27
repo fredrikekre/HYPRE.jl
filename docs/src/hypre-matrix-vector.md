@@ -27,7 +27,7 @@ based it can be *slightly* more resource efficient to use `SparseMatrixCSR`.
 The constructors also support both PartitionedArrays.jl backends: When using the `MPI`
 backend the communicator of the `PSparseMatrix`/`PVector` is used also for the
 `HYPREMatrix`/`HYPREVector`, and when using the `Sequential` backend it is assumed to be a
-single-process setup, and the global communicator `MPI.COMM_WORLD` is used.
+single-process setup, and the `MPI.COMM_SELF` communicator is used.
 
 **Example pseudocode**
 
