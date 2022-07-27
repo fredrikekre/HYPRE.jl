@@ -231,6 +231,15 @@ end
     @test indices::Vector{HYPRE_Int} == collect(1:10)
     @test values::Vector{HYPRE_Complex} == b # == for other eltype
     @test_throws ArgumentError Internals.to_hypre_data([1, 2], ilower, iupper)
+
+    # Copying Vector -> HYPREVector
+    b = rand(10)
+    b2 = zeros(10)
+    h = HYPREVector(b2)
+    h′ = copy!(h, b)
+    @test h === h′
+    copy!(b2, h)
+    @test b == b2
 end
 
 @testset "HYPREVector(::PVector)" begin
@@ -256,6 +265,13 @@ end
     pbc = fill!(copy(pb), 0)
     copy!(pbc, H)
     @test tomain(pbc) == tomain(pb)
+
+    pb2 = 2 * pb
+    H′ = copy!(H, pb2)
+    @test H === H′
+    copy!(pbc, H)
+    @test tomain(pbc) == 2 * tomain(pb)
+
     # MPI backend
     backend = MPIBackend()
     parts = get_part_ids(backend, 1)

@@ -269,15 +269,33 @@ HYPREVector(x::Vector, ilower=1, iupper=length(x)) =
     HYPREVector(MPI.COMM_SELF, x, ilower, iupper)
 
 # TODO: Other eltypes could be support by using a intermediate buffer
-function Base.copy!(x::Vector{HYPRE_Complex}, h::HYPREVector)
-    ilower, iupper = Internals.get_proc_rows(h)
+function Base.copy!(dst::Vector{HYPRE_Complex}, src::HYPREVector)
+    ilower, iupper = Internals.get_proc_rows(src)
     nvalues = iupper - ilower + 1
-    if length(x) != nvalues
-        throw(ArgumentError("different lengths"))
+    if length(dst) != nvalues
+        throw(ArgumentError("length of dst and src does not match"))
     end
     indices = collect(HYPRE_BigInt, ilower:iupper)
-    @check HYPRE_IJVectorGetValues(h.ijvector, nvalues, indices, x)
-    return x
+    @check HYPRE_IJVectorGetValues(src.ijvector, nvalues, indices, dst)
+    return dst
+end
+
+function Base.copy!(dst::HYPREVector, src::Vector{HYPRE_Complex})
+    ilower, iupper = Internals.get_proc_rows(dst)
+    nvalues = iupper - ilower + 1
+    if length(src) != nvalues
+        throw(ArgumentError("length of dst and src does not match"))
+    end
+    # Re-initialize the vector
+    @check HYPRE_IJVectorInitialize(dst.ijvector)
+    # Set all the values
+    indices = collect(HYPRE_BigInt, ilower:iupper)
+    @check HYPRE_IJVectorSetValues(dst.ijvector, nvalues, indices, src)
+    # TODO: It shouldn't be necessary to assemble here since we only set owned rows (?)
+    # @check HYPRE_IJVectorAssemble(dst.ijvector)
+    # TODO: Necessary to recreate the ParVector? Running some examples it seems like it is
+    # not needed.
+    return dst
 end
 
 ##################################################
@@ -454,24 +472,54 @@ function HYPREVector(v::PVector)
     return b
 end
 
-# TODO: Other eltypes could be support by using a intermediate buffer
-function Base.copy!(v::PVector{HYPRE_Complex}, h::HYPREVector)
-    ilower_v, iupper_v = Internals.get_proc_rows(v)
-    ilower_h, iupper_h = Internals.get_proc_rows(h)
-    if ilower_v != ilower_h && iupper_v != iupper_h
+function Internals.copy_check(dst::HYPREVector, src::PVector)
+    il_dst, iu_dst = Internals.get_proc_rows(dst)
+    il_src, iu_src = Internals.get_proc_rows(src)
+    if il_dst != il_src && iu_dst != iu_src
         # TODO: Why require this?
-        throw(ArgumentError("mismatch in owned rows"))
+        throw(ArgumentError(
+            "row owner mismatch between dst ($(il_dst:iu_dst)) and src ($(il_dst:iu_dst))"
+        ))
     end
-    map_parts(v.values, v.owned_values, v.rows.partition) do vv, _, vr
-        ilower_v_part = vr.lid_to_gid[vr.oid_to_lid.start]
-        iupper_v_part = vr.lid_to_gid[vr.oid_to_lid.stop]
-        nvalues = HYPRE_Int(iupper_v_part - ilower_v_part + 1)
-        indices = collect(HYPRE_BigInt, ilower_v_part:iupper_v_part)
+end
+
+# TODO: Other eltypes could be support by using a intermediate buffer
+function Base.copy!(dst::PVector{HYPRE_Complex}, src::HYPREVector)
+    Internals.copy_check(src, dst)
+    map_parts(dst.values, dst.owned_values, dst.rows.partition) do vv, _, vr
+        il_src_part = vr.lid_to_gid[vr.oid_to_lid.start]
+        iu_src_part = vr.lid_to_gid[vr.oid_to_lid.stop]
+        nvalues = HYPRE_Int(iu_src_part - il_src_part + 1)
+        indices = collect(HYPRE_BigInt, il_src_part:iu_src_part)
+
+        # Assumption: the dst vector is assembled, and should thus have 0s on the ghost
+        # entries (??). If this is not true, we must call fill!(vv, 0) here. This should be
+        # fairly cheap anyway, so might as well do it...
+        fill!(vv, 0)
 
         # TODO: Safe to use vv here? Owned values are always first?
-        @check HYPRE_IJVectorGetValues(h.ijvector, nvalues, indices, vv)
+        @check HYPRE_IJVectorGetValues(src.ijvector, nvalues, indices, vv)
     end
-    return v
+    return dst
+end
+
+function Base.copy!(dst::HYPREVector, src::PVector{HYPRE_Complex})
+    Internals.copy_check(dst, src)
+    # Re-initialize the vector
+    @check HYPRE_IJVectorInitialize(dst.ijvector)
+    map_parts(src.values, src.owned_values, src.rows.partition) do vv, _, vr
+        ilower_src_part = vr.lid_to_gid[vr.oid_to_lid.start]
+        iupper_src_part = vr.lid_to_gid[vr.oid_to_lid.stop]
+        nvalues = HYPRE_Int(iupper_src_part - ilower_src_part + 1)
+        indices = collect(HYPRE_BigInt, ilower_src_part:iupper_src_part)
+        # TODO: Safe to use vv here? Owned values are always first?
+        @check HYPRE_IJVectorSetValues(dst.ijvector, nvalues, indices, vv)
+    end
+    # TODO: It shouldn't be necessary to assemble here since we only set owned rows (?)
+    # @check HYPRE_IJVectorAssemble(dst.ijvector)
+    # TODO: Necessary to recreate the ParVector? Running some examples it seems like it is
+    # not needed.
+    return dst
 end
 
 # Solver interface
