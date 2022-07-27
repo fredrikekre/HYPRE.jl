@@ -49,8 +49,8 @@ version = "0.8.6"
 
 [[deps.Documenter]]
 deps = ["ANSIColoredPrinters", "Base64", "Dates", "DocStringExtensions", "IOCapture", "InteractiveUtils", "JSON", "LibGit2", "Logging", "Markdown", "REPL", "Test", "Unicode"]
-git-tree-sha1 = "7c98cab82668f33299b195c1940690b2ec3a0ac2"
-repo-rev = "master"
+git-tree-sha1 = "c2cc31489a9ed6c602810c5ca298a3c3002510c5"
+repo-rev = "fe/mindepth"
 repo-url = "https://github.com/JuliaDocs/Documenter.jl.git"
 uuid = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 version = "0.28.0-DEV"
@@ -67,9 +67,9 @@ version = "1.0.0"
 
 [[deps.HYPRE_jll]]
 deps = ["Artifacts", "JLLWrappers", "LAPACK_jll", "LazyArtifacts", "Libdl", "MPICH_jll", "MPIPreferences", "MPItrampoline_jll", "MicrosoftMPI_jll", "OpenBLAS_jll", "OpenMPI_jll", "Pkg", "TOML"]
-git-tree-sha1 = "ed07e4165a837e4606bc5dfbb6536ab0ec798ab8"
+git-tree-sha1 = "b77d3eca75f8442e034ccf415c87405a49e77985"
 uuid = "0a602bbd-b08b-5d75-8d32-0de6eef44785"
-version = "2.23.0+1"
+version = "2.23.1+1"
 
 [[deps.IOCapture]]
 deps = ["Logging", "Random"]
