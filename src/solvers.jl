@@ -7,6 +7,9 @@ Abstract super type of all the wrapped HYPRE solvers.
 """
 abstract type HYPRESolver end
 
+# Fallback for the solvers that doesn't have required defaults
+Internals.set_precond_defaults(::HYPRESolver) = nothing
+
 # Generic fallback allocating a zero vector as initial guess
 # TODO: This should allocate x using the owned cols instead of rows of A/b, but currently
 #       it is assumed these are always equivalent.
@@ -141,6 +144,12 @@ end
 
 Internals.solve_func(::BoomerAMG) = HYPRE_BoomerAMGSolve
 Internals.setup_func(::BoomerAMG) = HYPRE_BoomerAMGSetup
+
+function Internals.set_precond_defaults(amg::BoomerAMG)
+    defaults = (; Tol = 0.0, MaxIter = 1)
+    Internals.set_options(amg, pairs(defaults))
+    return nothing
+end
 
 
 #########

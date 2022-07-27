@@ -18,6 +18,7 @@ function Internals.set_options(s::BiCGSTAB, kwargs)
         elseif k === :MinIter
             @check HYPRE_ParCSRBiCGSTABSetMinIter(solver, v)
         elseif k === :Precond
+            Internals.set_precond_defaults(v)
             Internals.set_precond(s, v)
         elseif k === :PrintLevel
             @check HYPRE_ParCSRBiCGSTABSetPrintLevel(solver, v)
@@ -308,6 +309,7 @@ function Internals.set_options(s::GMRES, kwargs)
         elseif k === :MinIter
             @check HYPRE_ParCSRGMRESSetMinIter(solver, v)
         elseif k === :Precond
+            Internals.set_precond_defaults(v)
             Internals.set_precond(s, v)
         elseif k === :PrintLevel
             @check HYPRE_ParCSRGMRESSetPrintLevel(solver, v)
@@ -341,6 +343,7 @@ function Internals.set_options(s::PCG, kwargs)
         elseif k === :MaxIter
             @check HYPRE_ParCSRPCGSetMaxIter(solver, v)
         elseif k === :Precond
+            Internals.set_precond_defaults(v)
             Internals.set_precond(s, v)
         elseif k === :PrintLevel
             @check HYPRE_ParCSRPCGSetPrintLevel(solver, v)

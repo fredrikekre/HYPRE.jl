@@ -28,6 +28,7 @@ function generate_options(io, structname, prefixes...)
         print(io, "        $(first ? "" : "else")if k === :$(k)")
         println(io)
         if k == "Precond"
+            println(io, "            Internals.set_precond_defaults(v)")
             println(io, "            Internals.set_precond(s, v)")
         elseif nargs == 1
             println(io, "            @check ", n, "(solver)")

@@ -12,5 +12,6 @@ function set_options end
 function solve_func end
 function setup_func end
 function set_precond end
+function set_precond_defaults end
 
 end # module Internals

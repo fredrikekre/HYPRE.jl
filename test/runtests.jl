@@ -312,6 +312,14 @@ end
     x_h = HYPRE.solve(bicg, A_h, b_h)
     copy!(x, x_h)
     @test x ≈ A \ b atol=tol
+    # Tests Internals.set_precond_defaults for BoomerAMG
+    precond = HYPRE.BoomerAMG()
+    bicg = HYPRE.BiCGSTAB(; Tol = tol, Precond = precond)
+    x_h = HYPREVector(zeros(100))
+    HYPRE.solve!(bicg, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
 end
 
 @testset "BoomerAMG" begin
