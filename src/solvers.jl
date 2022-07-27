@@ -79,9 +79,11 @@ end
 ####################
 
 mutable struct BiCGSTAB <: HYPRESolver
+    comm::MPI.Comm
     solver::HYPRE_Solver
-    function BiCGSTAB(comm::MPI.Comm=MPI.COMM_WORLD; kwargs...)
-        solver = new(C_NULL)
+    function BiCGSTAB(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
+        # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRBiCGSTABCreate
+        solver = new(comm, C_NULL)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
         @check HYPRE_ParCSRBiCGSTABCreate(comm, solver_ref)
         solver.solver = solver_ref[]
@@ -146,9 +148,11 @@ Internals.setup_func(::BoomerAMG) = HYPRE_BoomerAMGSetup
 #########
 
 mutable struct GMRES <: HYPRESolver
+    comm::MPI.Comm
     solver::HYPRE_Solver
-    function GMRES(comm::MPI.Comm=MPI.COMM_WORLD; kwargs...)
-        solver = new(C_NULL)
+    function GMRES(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
+        # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRGMRESCreate
+        solver = new(comm, C_NULL)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
         @check HYPRE_ParCSRGMRESCreate(comm, solver_ref)
         solver.solver = solver_ref[]
@@ -182,9 +186,11 @@ end
 ###############
 
 mutable struct PCG <: HYPRESolver
+    comm::MPI.Comm
     solver::HYPRE_Solver
-    function PCG(comm::MPI.Comm=MPI.COMM_WORLD; kwargs...)
-        solver = new(C_NULL)
+    function PCG(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
+        # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRPCGCreate
+        solver = new(comm, C_NULL)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
         @check HYPRE_ParCSRPCGCreate(comm, solver_ref)
         solver.solver = solver_ref[]
