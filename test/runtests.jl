@@ -13,6 +13,11 @@ using Test
 # Init HYPRE and MPI
 HYPRE.Init()
 
+@testset "LibHYPRE" begin
+    @test LibHYPRE.VERSION > VERSION # :)
+    @test LibHYPRE.VERSION.major == 2
+end
+
 @testset "HYPREMatrix" begin
     H = HYPREMatrix(MPI.COMM_WORLD, 1, 5)
     @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)

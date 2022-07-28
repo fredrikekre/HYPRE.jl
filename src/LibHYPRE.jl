@@ -86,4 +86,12 @@ for name in names(@__MODULE__; all=true)
     end
 end
 
+function __init__()
+    major_ref = Ref{HYPRE_Int}(-1)
+    minor_ref = Ref{HYPRE_Int}(-1)
+    patch_ref = Ref{HYPRE_Int}(-1)
+    @check HYPRE_VersionNumber(major_ref, minor_ref, patch_ref, C_NULL)
+    global VERSION = VersionNumber(major_ref[], minor_ref[], patch_ref[])
+end
+
 end
