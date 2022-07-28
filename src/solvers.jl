@@ -91,6 +91,14 @@ end
 # (ParCSR)BiCGSTAB #
 ####################
 
+"""
+    BiCGSTAB(; settings...)
+
+Create a `BiCGSTAB` solver. See HYPRE API reference for details and supported settings.
+
+**External links**
+ - [BiCGSTAB API reference](https://hypre.readthedocs.io/en/latest/api-sol-parcsr.html#breathe-section-title-parcsr-bicgstab-solver)
+"""
 mutable struct BiCGSTAB <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
@@ -131,6 +139,16 @@ end
 # BoomerAMG #
 #############
 
+"""
+    BoomerAMG(; settings...)
+
+Create a `BoomerAMG` solver/preconditioner. See HYPRE API reference for details and
+supported settings.
+
+**External links**
+ - [BoomerAMG documentation](https://hypre.readthedocs.io/en/latest/solvers-boomeramg.html)
+ - [BoomerAMG API reference](https://hypre.readthedocs.io/en/latest/api-sol-parcsr.html#breathe-section-title-parcsr-boomeramg-solver-and-preconditioner)
+"""
 mutable struct BoomerAMG <: HYPRESolver
     solver::HYPRE_Solver
     function BoomerAMG(; kwargs...)
@@ -166,6 +184,14 @@ end
 # FlexGMRES #
 #############
 
+"""
+    FlexGMRES(; settings...)
+
+Create a `FlexGMRES` solver. See HYPRE API reference for details and supported settings.
+
+**External links**
+ - [FlexGMRES API reference](https://hypre.readthedocs.io/en/latest/api-sol-parcsr.html#breathe-section-title-parcsr-flexgmres-solver)
+"""
 mutable struct FlexGMRES <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
@@ -241,6 +267,14 @@ end
 # GMRES #
 #########
 
+"""
+    GMRES(; settings...)
+
+Create a `GMRES` solver. See HYPRE API reference for details and supported settings.
+
+**External links**
+ - [GMRES API reference](https://hypre.readthedocs.io/en/latest/api-sol-parcsr.html#breathe-section-title-parcsr-gmres-solver)
+"""
 mutable struct GMRES <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
@@ -279,6 +313,15 @@ end
 # Hybrid #
 ##########
 
+"""
+    Hybrid(; settings...)
+
+Create a `Hybrid` solver. See HYPRE API reference for details and supported settings.
+
+**External links**
+ - [Hybrid documentation](https://hypre.readthedocs.io/en/latest/solvers-hybrid.html)
+ - [Hybrid API reference](https://hypre.readthedocs.io/en/latest/api-sol-parcsr.html#breathe-section-title-parcsr-hybrid-solver)
+"""
 mutable struct Hybrid <: HYPRESolver
     solver::HYPRE_Solver
     function Hybrid(; kwargs...)
@@ -318,6 +361,16 @@ end
 # ILU #
 #######
 
+"""
+    ILU(; settings...)
+
+Create a `ILU` solver/preconditioner. See HYPRE API reference for details and supported
+settings.
+
+**External links**
+ - [ILU documentation](https://hypre.readthedocs.io/en/latest/solvers-hypre-ilu.html)
+ - [ILU API reference](https://hypre.readthedocs.io/en/latest/api-sol-parcsr.html#breathe-section-title-parcsr-ilu-solver)
+"""
 mutable struct ILU <: HYPRESolver
     solver::HYPRE_Solver
     function ILU(; kwargs...)
@@ -353,6 +406,16 @@ end
 # (ParCSR)ParaSails #
 #####################
 
+"""
+    ParaSails(comm=MPI.COMM_WORLD; settings...)
+
+Create a `ParaSails` preconditioner. See HYPRE API reference for details and supported
+settings.
+
+**External links**
+ - [ParaSails documentation](https://hypre.readthedocs.io/en/latest/solvers-parasails.html)
+ - [ParaSails API reference](https://hypre.readthedocs.io/en/latest/api-sol-parcsr.html#breathe-section-title-parcsr-parasails-preconditioner)
+"""
 mutable struct ParaSails <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
@@ -380,6 +443,14 @@ Internals.solve_func(::ParaSails) = HYPRE_ParCSRParaSailsSolve
 # (ParCSR)PCG #
 ###############
 
+"""
+    PCG(; settings...)
+
+Create a `PCG` solver. See HYPRE API reference for details and supported settings.
+
+**External links**
+ - [PCG API reference](https://hypre.readthedocs.io/en/latest/api-sol-parcsr.html#breathe-section-title-parcsr-pcg-solver)
+"""
 mutable struct PCG <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver

@@ -19,6 +19,7 @@ makedocs(
         "matrix-vector.md",
         "solvers-preconditioners.md",
         "libhypre.md",
+        "api.md",
     ],
     draft = liveserver,
 )

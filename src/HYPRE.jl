@@ -26,6 +26,8 @@ include("Internals.jl")
 Wrapper around `HYPRE_Init`. If `finalize_atexit` is `true` a Julia exit hook is added,
 which calls `HYPRE_Finalize`. This method will also call `MPI.Init` unless MPI is already
 initialized.
+
+**Note**: This function *must* be called before using HYPRE functions.
 """
 function Init(; finalize_atexit=true)
     if !(MPI.Initialized())
