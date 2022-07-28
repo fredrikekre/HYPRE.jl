@@ -10,7 +10,7 @@ HYPRE.jl defines conversion methods from standard Julia datastructures to `HYPRE
 
 ```@contents
 Pages = ["hypre-matrix-vector.md"]
-MinDepth = 2
+Depth = 2:2
 ```
 
 ## PartitionedArrays.jl (multi-process)
