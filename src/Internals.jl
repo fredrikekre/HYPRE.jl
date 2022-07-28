@@ -8,6 +8,7 @@ function check_n_rows end
 function copy_check end
 function get_comm end
 function get_proc_rows end
+function safe_finalizer end
 function set_options end
 function set_precond end
 function set_precond_defaults end

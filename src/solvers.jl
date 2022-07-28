@@ -7,6 +7,16 @@ Abstract super type of all the wrapped HYPRE solvers.
 """
 abstract type HYPRESolver end
 
+function Internals.safe_finalizer(Destroy)
+    # Only calls the Destroy if pointer not C_NULL
+    return function(solver)
+        if solver.solver != C_NULL
+            Destroy(solver.solver)
+            solver.solver = C_NULL
+        end
+    end
+end
+
 # Fallback for the solvers that doesn't have required defaults
 Internals.set_precond_defaults(::HYPRESolver) = nothing
 
@@ -91,7 +101,7 @@ mutable struct BiCGSTAB <: HYPRESolver
         @check HYPRE_ParCSRBiCGSTABCreate(comm, solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(x -> HYPRE_ParCSRBiCGSTABDestroy(x.solver), solver)
+        finalizer(Internals.safe_finalizer(HYPRE_ParCSRBiCGSTABDestroy), solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -129,7 +139,7 @@ mutable struct BoomerAMG <: HYPRESolver
         @check HYPRE_BoomerAMGCreate(solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(x -> HYPRE_BoomerAMGDestroy(x.solver), solver)
+        finalizer(Internals.safe_finalizer(HYPRE_BoomerAMGDestroy), solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -166,7 +176,7 @@ mutable struct FlexGMRES <: HYPRESolver
         @check HYPRE_ParCSRFlexGMRESCreate(comm, solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(x -> HYPRE_ParCSRFlexGMRESDestroy(x.solver), solver)
+        finalizer(Internals.safe_finalizer(HYPRE_ParCSRFlexGMRESDestroy), solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -241,7 +251,7 @@ mutable struct GMRES <: HYPRESolver
         @check HYPRE_ParCSRGMRESCreate(comm, solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(x -> HYPRE_ParCSRGMRESDestroy(x.solver), solver)
+        finalizer(Internals.safe_finalizer(HYPRE_ParCSRGMRESDestroy), solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -277,7 +287,7 @@ mutable struct Hybrid <: HYPRESolver
         @check HYPRE_ParCSRHybridCreate(solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(x -> HYPRE_ParCSRHybridDestroy(x.solver), solver)
+        finalizer(Internals.safe_finalizer(HYPRE_ParCSRHybridDestroy), solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -296,6 +306,9 @@ Internals.solve_func(::Hybrid) = HYPRE_ParCSRHybridSolve
 function Internals.set_precond(hybrid::Hybrid, p::HYPRESolver)
     solve_f = Internals.solve_func(p)
     setup_f = Internals.setup_func(p)
+    # Deactivate the finalizer of p since the HYBRIDDestroy function does this,
+    # see https://github.com/hypre-space/hypre/issues/699
+    finalizer(x -> (x.solver = C_NULL), p)
     @check HYPRE_ParCSRHybridSetPrecond(hybrid.solver, solve_f, setup_f, p.solver)
     return nothing
 end
@@ -313,7 +326,7 @@ mutable struct ILU <: HYPRESolver
         @check HYPRE_ILUCreate(solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(x -> HYPRE_ILUDestroy(x.solver), solver)
+        finalizer(Internals.safe_finalizer(HYPRE_ILUDestroy), solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -350,7 +363,7 @@ mutable struct ParaSails <: HYPRESolver
         @check HYPRE_ParCSRParaSailsCreate(comm, solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(x -> HYPRE_ParCSRParaSailsDestroy(x.solver), solver)
+        finalizer(Internals.safe_finalizer(HYPRE_ParCSRParaSailsDestroy), solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -377,7 +390,7 @@ mutable struct PCG <: HYPRESolver
         @check HYPRE_ParCSRPCGCreate(comm, solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(x -> HYPRE_ParCSRPCGDestroy(x.solver), solver)
+        finalizer(Internals.safe_finalizer(HYPRE_ParCSRPCGDestroy), solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver

@@ -475,9 +475,8 @@ end
     @test x ≈ A \ b atol=tol
 
     # Solve with given preconditioner
-    # XXX: https://github.com/hypre-space/hypre/issues/699
     precond = HYPRE.BoomerAMG()
-    hybrid = HYPRE.Hybrid(; Tol = tol, SolverType = 3, #= Precond = precond =#)
+    hybrid = HYPRE.Hybrid(; Tol = tol, SolverType = 3, Precond = precond)
     x_h = HYPREVector(zeros(100))
     HYPRE.solve!(hybrid, x_h, A_h, b_h)
     copy!(x, x_h)
