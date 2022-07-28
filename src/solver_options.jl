@@ -289,6 +289,36 @@ function Internals.set_options(s::BoomerAMG, kwargs)
     end
 end
 
+function Internals.set_options(s::FlexGMRES, kwargs)
+    solver = s.solver
+    for (k, v) in kwargs
+        if k === :ConvergenceFactorTol
+            @check HYPRE_FlexGMRESSetConvergenceFactorTol(solver, v)
+        elseif k === :AbsoluteTol
+            @check HYPRE_ParCSRFlexGMRESSetAbsoluteTol(solver, v)
+        elseif k === :KDim
+            @check HYPRE_ParCSRFlexGMRESSetKDim(solver, v)
+        elseif k === :Logging
+            @check HYPRE_ParCSRFlexGMRESSetLogging(solver, v)
+        elseif k === :MaxIter
+            @check HYPRE_ParCSRFlexGMRESSetMaxIter(solver, v)
+        elseif k === :MinIter
+            @check HYPRE_ParCSRFlexGMRESSetMinIter(solver, v)
+        elseif k === :ModifyPC
+            @check HYPRE_ParCSRFlexGMRESSetModifyPC(solver, v)
+        elseif k === :Precond
+            Internals.set_precond_defaults(v)
+            Internals.set_precond(s, v)
+        elseif k === :PrintLevel
+            @check HYPRE_ParCSRFlexGMRESSetPrintLevel(solver, v)
+        elseif k === :Tol
+            @check HYPRE_ParCSRFlexGMRESSetTol(solver, v)
+        else
+            throw(ArgumentError("unknown option $k for HYPRE.FlexGMRES"))
+        end
+    end
+end
+
 function Internals.set_options(s::GMRES, kwargs)
     solver = s.solver
     for (k, v) in kwargs

@@ -152,6 +152,44 @@ function Internals.set_precond_defaults(amg::BoomerAMG)
 end
 
 
+#############
+# FlexGMRES #
+#############
+
+mutable struct FlexGMRES <: HYPRESolver
+    comm::MPI.Comm
+    solver::HYPRE_Solver
+    function FlexGMRES(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
+        # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRFlexGMRESCreate
+        solver = new(comm, C_NULL)
+        solver_ref = Ref{HYPRE_Solver}(C_NULL)
+        @check HYPRE_ParCSRFlexGMRESCreate(comm, solver_ref)
+        solver.solver = solver_ref[]
+        # Attach a finalizer
+        finalizer(x -> HYPRE_ParCSRFlexGMRESDestroy(x.solver), solver)
+        # Set the options
+        Internals.set_options(solver, kwargs)
+        return solver
+    end
+end
+
+function solve!(flex::FlexGMRES, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
+    @check HYPRE_ParCSRFlexGMRESSetup(flex.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ParCSRFlexGMRESSolve(flex.solver, A.parmatrix, b.parvector, x.parvector)
+    return x
+end
+
+Internals.setup_func(::FlexGMRES) = HYPRE_ParCSRFlexGMRESSetup
+Internals.solve_func(::FlexGMRES) = HYPRE_ParCSRFlexGMRESSolve
+
+function Internals.set_precond(flex::FlexGMRES, p::HYPRESolver)
+    solve_f = Internals.solve_func(p)
+    setup_f = Internals.setup_func(p)
+    @check HYPRE_ParCSRFlexGMRESSetPrecond(flex.solver, solve_f, setup_f, p.solver)
+    return nothing
+end
+
+
 #########
 ## FSAI #
 #########
