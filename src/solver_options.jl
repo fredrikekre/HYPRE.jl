@@ -323,6 +323,27 @@ function Internals.set_options(s::GMRES, kwargs)
     end
 end
 
+function Internals.set_options(s::ParaSails, kwargs)
+    solver = s.solver
+    for (k, v) in kwargs
+        if k === :Filter
+            @check HYPRE_ParCSRParaSailsSetFilter(solver, v)
+        elseif k === :Loadbal
+            @check HYPRE_ParCSRParaSailsSetLoadbal(solver, v)
+        elseif k === :Logging
+            @check HYPRE_ParCSRParaSailsSetLogging(solver, v)
+        elseif k === :Params
+            @check HYPRE_ParCSRParaSailsSetParams(solver, v...)
+        elseif k === :Reuse
+            @check HYPRE_ParCSRParaSailsSetReuse(solver, v)
+        elseif k === :Sym
+            @check HYPRE_ParCSRParaSailsSetSym(solver, v)
+        else
+            throw(ArgumentError("unknown option $k for HYPRE.ParaSails"))
+        end
+    end
+end
+
 function Internals.set_options(s::PCG, kwargs)
     solver = s.solver
     for (k, v) in kwargs

@@ -227,6 +227,33 @@ function Internals.set_precond(gmres::GMRES, p::HYPRESolver)
 end
 
 
+#####################
+# (ParCSR)ParaSails #
+#####################
+
+mutable struct ParaSails <: HYPRESolver
+    comm::MPI.Comm
+    solver::HYPRE_Solver
+    function ParaSails(comm::MPI.Comm=MPI.COMM_WORLD; kwargs...)
+        # Note: comm is used in this solver so default to COMM_WORLD
+        solver = new(comm, C_NULL)
+        solver_ref = Ref{HYPRE_Solver}(C_NULL)
+        @check HYPRE_ParCSRParaSailsCreate(comm, solver_ref)
+        solver.solver = solver_ref[]
+        # Attach a finalizer
+        finalizer(x -> HYPRE_ParCSRParaSailsDestroy(x.solver), solver)
+        # Set the options
+        Internals.set_options(solver, kwargs)
+        return solver
+    end
+end
+
+const ParCSRParaSails = ParaSails
+
+Internals.setup_func(::ParaSails) = HYPRE_ParCSRParaSailsSetup
+Internals.solve_func(::ParaSails) = HYPRE_ParCSRParaSailsSolve
+
+
 ###############
 # (ParCSR)PCG #
 ###############

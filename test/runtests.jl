@@ -409,6 +409,30 @@ end
     @test x ≈ A \ b atol=tol
 end
 
+@testset "(ParCSR)ParaSails" begin
+    # Solver constructor and options
+    @test_throws(
+        ArgumentError("unknown option UnknownOption for HYPRE.ParaSails"),
+        HYPRE.ParaSails(; UnknownOption = 1)
+    )
+    # Setup
+    A = sprand(100, 100, 0.05); A = A'A + 5I
+    b = rand(100)
+    x = zeros(100)
+    ilower, iupper = 1, size(A, 1)
+    A_h = HYPREMatrix(A, ilower, iupper)
+    b_h = HYPREVector(b, ilower, iupper)
+    x_h = HYPREVector(b, ilower, iupper)
+    # Solve with ParaSails as preconditioner
+    tol = 1e-9
+    parasails = HYPRE.ParaSails()
+    pcg = HYPRE.PCG(; Tol = tol, Precond = parasails)
+    HYPRE.solve!(pcg, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+end
+
 @testset "(ParCSR)PCG" begin
     # Solver constructor and options
     @test_throws(
