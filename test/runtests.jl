@@ -449,6 +449,47 @@ end
     @test x ≈ A \ b atol=tol
 end
 
+@testset "Hybrid" begin
+    # Solver constructor and options
+    @test_throws(
+        ArgumentError("unknown option UnknownOption for HYPRE.Hybrid"),
+        HYPRE.Hybrid(; UnknownOption = 1)
+    )
+    # Setup
+    A = sprand(100, 100, 0.05); A = A'A + 5I
+    b = rand(100)
+    x = zeros(100)
+    A_h = HYPREMatrix(A)
+    b_h = HYPREVector(b)
+    x_h = HYPREVector(x)
+    # Solve
+    tol = 1e-9
+    hybrid = HYPRE.Hybrid(; Tol = tol)
+    HYPRE.solve!(hybrid, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+    # Test without passing initial guess
+    x_h = HYPRE.solve(hybrid, A_h, b_h)
+    copy!(x, x_h)
+    @test x ≈ A \ b atol=tol
+
+    # Solve with given preconditioner
+    # XXX: https://github.com/hypre-space/hypre/issues/699
+    precond = HYPRE.BoomerAMG()
+    hybrid = HYPRE.Hybrid(; Tol = tol, SolverType = 3, #= Precond = precond =#)
+    x_h = HYPREVector(zeros(100))
+    HYPRE.solve!(hybrid, x_h, A_h, b_h)
+    copy!(x, x_h)
+    # Test result with direct solver
+    @test x ≈ A \ b atol=tol
+    # Test without passing initial guess
+    x_h = HYPRE.solve(hybrid, A_h, b_h)
+    copy!(x, x_h)
+    @test x ≈ A \ b atol=tol
+end
+
+
 @testset "ILU" begin
     # Solver constructor and options
     @test_throws(

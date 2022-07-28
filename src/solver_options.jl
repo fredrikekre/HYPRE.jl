@@ -353,6 +353,116 @@ function Internals.set_options(s::GMRES, kwargs)
     end
 end
 
+function Internals.set_options(s::Hybrid, kwargs)
+    solver = s.solver
+    for (k, v) in kwargs
+        if k === :AbsoluteTol
+            @check HYPRE_ParCSRHybridSetAbsoluteTol(solver, v)
+        elseif k === :AggInterpType
+            @check HYPRE_ParCSRHybridSetAggInterpType(solver, v)
+        elseif k === :AggNumLevels
+            @check HYPRE_ParCSRHybridSetAggNumLevels(solver, v)
+        elseif k === :CoarsenType
+            @check HYPRE_ParCSRHybridSetCoarsenType(solver, v)
+        elseif k === :ConvergenceTol
+            @check HYPRE_ParCSRHybridSetConvergenceTol(solver, v)
+        elseif k === :CycleNumSweeps
+            @check HYPRE_ParCSRHybridSetCycleNumSweeps(solver, v...)
+        elseif k === :CycleRelaxType
+            @check HYPRE_ParCSRHybridSetCycleRelaxType(solver, v...)
+        elseif k === :CycleType
+            @check HYPRE_ParCSRHybridSetCycleType(solver, v)
+        elseif k === :DSCGMaxIter
+            @check HYPRE_ParCSRHybridSetDSCGMaxIter(solver, v)
+        elseif k === :DofFunc
+            @check HYPRE_ParCSRHybridSetDofFunc(solver, v)
+        elseif k === :GridRelaxPoints
+            @check HYPRE_ParCSRHybridSetGridRelaxPoints(solver, v)
+        elseif k === :GridRelaxType
+            @check HYPRE_ParCSRHybridSetGridRelaxType(solver, v)
+        elseif k === :InterpType
+            @check HYPRE_ParCSRHybridSetInterpType(solver, v)
+        elseif k === :KDim
+            @check HYPRE_ParCSRHybridSetKDim(solver, v)
+        elseif k === :KeepTranspose
+            @check HYPRE_ParCSRHybridSetKeepTranspose(solver, v)
+        elseif k === :LevelOuterWt
+            @check HYPRE_ParCSRHybridSetLevelOuterWt(solver, v...)
+        elseif k === :LevelRelaxWt
+            @check HYPRE_ParCSRHybridSetLevelRelaxWt(solver, v...)
+        elseif k === :Logging
+            @check HYPRE_ParCSRHybridSetLogging(solver, v)
+        elseif k === :MaxCoarseSize
+            @check HYPRE_ParCSRHybridSetMaxCoarseSize(solver, v)
+        elseif k === :MaxLevels
+            @check HYPRE_ParCSRHybridSetMaxLevels(solver, v)
+        elseif k === :MaxRowSum
+            @check HYPRE_ParCSRHybridSetMaxRowSum(solver, v)
+        elseif k === :MeasureType
+            @check HYPRE_ParCSRHybridSetMeasureType(solver, v)
+        elseif k === :MinCoarseSize
+            @check HYPRE_ParCSRHybridSetMinCoarseSize(solver, v)
+        elseif k === :Nodal
+            @check HYPRE_ParCSRHybridSetNodal(solver, v)
+        elseif k === :NonGalerkinTol
+            @check HYPRE_ParCSRHybridSetNonGalerkinTol(solver, v...)
+        elseif k === :NumFunctions
+            @check HYPRE_ParCSRHybridSetNumFunctions(solver, v)
+        elseif k === :NumGridSweeps
+            @check HYPRE_ParCSRHybridSetNumGridSweeps(solver, v)
+        elseif k === :NumPaths
+            @check HYPRE_ParCSRHybridSetNumPaths(solver, v)
+        elseif k === :NumSweeps
+            @check HYPRE_ParCSRHybridSetNumSweeps(solver, v)
+        elseif k === :Omega
+            @check HYPRE_ParCSRHybridSetOmega(solver, v)
+        elseif k === :OuterWt
+            @check HYPRE_ParCSRHybridSetOuterWt(solver, v)
+        elseif k === :PCGMaxIter
+            @check HYPRE_ParCSRHybridSetPCGMaxIter(solver, v)
+        elseif k === :PMaxElmts
+            @check HYPRE_ParCSRHybridSetPMaxElmts(solver, v)
+        elseif k === :Precond
+            Internals.set_precond_defaults(v)
+            Internals.set_precond(s, v)
+        elseif k === :PrintLevel
+            @check HYPRE_ParCSRHybridSetPrintLevel(solver, v)
+        elseif k === :RecomputeResidual
+            @check HYPRE_ParCSRHybridSetRecomputeResidual(solver, v)
+        elseif k === :RecomputeResidualP
+            @check HYPRE_ParCSRHybridSetRecomputeResidualP(solver, v)
+        elseif k === :RelChange
+            @check HYPRE_ParCSRHybridSetRelChange(solver, v)
+        elseif k === :RelaxOrder
+            @check HYPRE_ParCSRHybridSetRelaxOrder(solver, v)
+        elseif k === :RelaxType
+            @check HYPRE_ParCSRHybridSetRelaxType(solver, v)
+        elseif k === :RelaxWeight
+            @check HYPRE_ParCSRHybridSetRelaxWeight(solver, v)
+        elseif k === :RelaxWt
+            @check HYPRE_ParCSRHybridSetRelaxWt(solver, v)
+        elseif k === :SeqThreshold
+            @check HYPRE_ParCSRHybridSetSeqThreshold(solver, v)
+        elseif k === :SetupType
+            @check HYPRE_ParCSRHybridSetSetupType(solver, v)
+        elseif k === :SolverType
+            @check HYPRE_ParCSRHybridSetSolverType(solver, v)
+        elseif k === :StopCrit
+            @check HYPRE_ParCSRHybridSetStopCrit(solver, v)
+        elseif k === :StrongThreshold
+            @check HYPRE_ParCSRHybridSetStrongThreshold(solver, v)
+        elseif k === :Tol
+            @check HYPRE_ParCSRHybridSetTol(solver, v)
+        elseif k === :TruncFactor
+            @check HYPRE_ParCSRHybridSetTruncFactor(solver, v)
+        elseif k === :TwoNorm
+            @check HYPRE_ParCSRHybridSetTwoNorm(solver, v)
+        else
+            throw(ArgumentError("unknown option $k for HYPRE.Hybrid"))
+        end
+    end
+end
+
 function Internals.set_options(s::ILU, kwargs)
     solver = s.solver
     for (k, v) in kwargs

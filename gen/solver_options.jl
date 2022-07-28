@@ -58,6 +58,7 @@ open(joinpath(@__DIR__, "..", "src", "solver_options.jl"), "w") do io
     generate_options(io, "FlexGMRES", "HYPRE_ParCSRFlexGMRESSet", "HYPRE_FlexGMRESSet")
     # generate_options(io, "FSAI", "HYPRE_FSAISet")
     generate_options(io, "GMRES", "HYPRE_ParCSRGMRESSet", "HYPRE_GMRESSet")
+    generate_options(io, "Hybrid", "HYPRE_ParCSRHybridSet")
     generate_options(io, "ILU", "HYPRE_ILUSet")
     generate_options(io, "ParaSails", "HYPRE_ParCSRParaSailsSet", "HYPRE_ParaSailsSet")
     generate_options(io, "PCG", "HYPRE_ParCSRPCGSet", "HYPRE_PCGSet")

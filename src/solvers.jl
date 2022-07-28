@@ -265,6 +265,42 @@ function Internals.set_precond(gmres::GMRES, p::HYPRESolver)
 end
 
 
+##########
+# Hybrid #
+##########
+
+mutable struct Hybrid <: HYPRESolver
+    solver::HYPRE_Solver
+    function Hybrid(; kwargs...)
+        solver = new(C_NULL)
+        solver_ref = Ref{HYPRE_Solver}(C_NULL)
+        @check HYPRE_ParCSRHybridCreate(solver_ref)
+        solver.solver = solver_ref[]
+        # Attach a finalizer
+        finalizer(x -> HYPRE_ParCSRHybridDestroy(x.solver), solver)
+        # Set the options
+        Internals.set_options(solver, kwargs)
+        return solver
+    end
+end
+
+function solve!(hybrid::Hybrid, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
+    @check HYPRE_ParCSRHybridSetup(hybrid.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ParCSRHybridSolve(hybrid.solver, A.parmatrix, b.parvector, x.parvector)
+    return x
+end
+
+Internals.setup_func(::Hybrid) = HYPRE_ParCSRHybridSetup
+Internals.solve_func(::Hybrid) = HYPRE_ParCSRHybridSolve
+
+function Internals.set_precond(hybrid::Hybrid, p::HYPRESolver)
+    solve_f = Internals.solve_func(p)
+    setup_f = Internals.setup_func(p)
+    @check HYPRE_ParCSRHybridSetPrecond(hybrid.solver, solve_f, setup_f, p.solver)
+    return nothing
+end
+
+
 #######
 # ILU #
 #######
