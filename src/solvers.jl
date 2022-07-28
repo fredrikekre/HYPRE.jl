@@ -227,6 +227,41 @@ function Internals.set_precond(gmres::GMRES, p::HYPRESolver)
 end
 
 
+#######
+# ILU #
+#######
+
+mutable struct ILU <: HYPRESolver
+    solver::HYPRE_Solver
+    function ILU(; kwargs...)
+        solver = new(C_NULL)
+        solver_ref = Ref{HYPRE_Solver}(C_NULL)
+        @check HYPRE_ILUCreate(solver_ref)
+        solver.solver = solver_ref[]
+        # Attach a finalizer
+        finalizer(x -> HYPRE_ILUDestroy(x.solver), solver)
+        # Set the options
+        Internals.set_options(solver, kwargs)
+        return solver
+    end
+end
+
+function solve!(ilu::ILU, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
+    @check HYPRE_ILUSetup(ilu.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ILUSolve(ilu.solver, A.parmatrix, b.parvector, x.parvector)
+    return x
+end
+
+Internals.setup_func(::ILU) = HYPRE_ILUSetup
+Internals.solve_func(::ILU) = HYPRE_ILUSolve
+
+function Internals.set_precond_defaults(ilu::ILU)
+    defaults = (; Tol = 0.0, MaxIter = 1)
+    Internals.set_options(ilu, pairs(defaults))
+    return nothing
+end
+
+
 #####################
 # (ParCSR)ParaSails #
 #####################

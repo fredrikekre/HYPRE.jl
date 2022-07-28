@@ -323,6 +323,41 @@ function Internals.set_options(s::GMRES, kwargs)
     end
 end
 
+function Internals.set_options(s::ILU, kwargs)
+    solver = s.solver
+    for (k, v) in kwargs
+        if k === :DropThreshold
+            @check HYPRE_ILUSetDropThreshold(solver, v)
+        elseif k === :DropThresholdArray
+            @check HYPRE_ILUSetDropThresholdArray(solver, v)
+        elseif k === :LevelOfFill
+            @check HYPRE_ILUSetLevelOfFill(solver, v)
+        elseif k === :LocalReordering
+            @check HYPRE_ILUSetLocalReordering(solver, v)
+        elseif k === :Logging
+            @check HYPRE_ILUSetLogging(solver, v)
+        elseif k === :MaxIter
+            @check HYPRE_ILUSetMaxIter(solver, v)
+        elseif k === :MaxNnzPerRow
+            @check HYPRE_ILUSetMaxNnzPerRow(solver, v)
+        elseif k === :NSHDropThreshold
+            @check HYPRE_ILUSetNSHDropThreshold(solver, v)
+        elseif k === :NSHDropThresholdArray
+            @check HYPRE_ILUSetNSHDropThresholdArray(solver, v)
+        elseif k === :PrintLevel
+            @check HYPRE_ILUSetPrintLevel(solver, v)
+        elseif k === :SchurMaxIter
+            @check HYPRE_ILUSetSchurMaxIter(solver, v)
+        elseif k === :Tol
+            @check HYPRE_ILUSetTol(solver, v)
+        elseif k === :Type
+            @check HYPRE_ILUSetType(solver, v)
+        else
+            throw(ArgumentError("unknown option $k for HYPRE.ILU"))
+        end
+    end
+end
+
 function Internals.set_options(s::ParaSails, kwargs)
     solver = s.solver
     for (k, v) in kwargs
