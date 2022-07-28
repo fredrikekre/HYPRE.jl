@@ -17,6 +17,7 @@ makedocs(
     pages = Any[
         "Home" => "index.md",
         "matrix-vector.md",
+        "solvers-preconditioners.md",
         "libhypre.md",
     ],
     draft = liveserver,
