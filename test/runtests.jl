@@ -349,8 +349,18 @@ end
         ArgumentError("unknown option UnknownOption for HYPRE.BoomerAMG"),
         HYPRE.BoomerAMG(; UnknownOption = 1)
     )
-    # Setup
-    A = sprand(100, 100, 0.05); A = A'A + 5I
+    # Setup 1D FEM matrix
+    I, J, V = Int[], Int[], Float64[]
+    for i in 1:99
+        k = (1 + rand()) * [1.0 -1.0; -1.0 1.0]
+        append!(V, k)
+        append!(I, [i, i+1, i, i+1]) # rows
+        append!(J, [i, i, i+1, i+1]) # cols
+    end
+    A = sparse(I, J, V)
+    A[:, 1] .= 0; A[1, :] .= 0; A[:, end] .= 0; A[end, :] .= 0;
+    A[1, 1] = 2; A[end, end] = 2
+    @test isposdef(A)
     b = rand(100)
     x = zeros(100)
     ilower, iupper = 1, size(A, 1)
@@ -362,12 +372,13 @@ end
     amg = HYPRE.BoomerAMG(; Tol = tol)
     HYPRE.solve!(amg, x_h, A_h, b_h)
     copy!(x, x_h)
+    @test (A * x ≈ b) atol = tol * norm(b) # default BoomerAMG criteria
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test (x ≈ A \ b) atol = tol * norm(b)
     # Test without passing initial guess
     x_h = HYPRE.solve(amg, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol * norm(b)
 end
 
 @testset "FlexGMRES" begin
