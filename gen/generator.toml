@@ -1,9 +1,9 @@
 [general]
 library_name = "libHYPRE"
-output_common_file_path = "../lib/LibHYPRECommon.jl"
-output_api_file_path = "../lib/LibHYPREAPI.jl"
+output_file_path = "../lib/LibHYPRE.jl"
 jll_pkg_name = "HYPRE_jll"
 export_symbol_prefixes = []
+prologue_file_path = "./prologue.jl"
 output_ignorelist = [
     # Undefined values DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MIN_EXP
     "HYPRE_REAL_MAX",

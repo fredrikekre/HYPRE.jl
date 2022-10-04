@@ -1,18 +1,10 @@
 using Clang.Generators
-using HYPRE_jll, MPIPreferences
+using HYPRE_jll, MPICH_jll
 
 cd(@__DIR__)
 
-if MPIPreferences.binary == "MPICH_jll"
-    import MPICH_jll: artifact_dir
-elseif MPIPreferences.binary == "OpenMPI_jll"
-    import OpenMPI_jll: artifact_dir
-else
-    error("Unknown MPI binary: $(MPIPreferences.binary)")
-end
-
 hypre_include_dir = normpath(HYPRE_jll.artifact_dir, "include")
-mpi_include_dir = normpath(artifact_dir, "include")
+mpi_include_dir = normpath(MPICH_jll.artifact_dir, "include")
 
 options = load_options(joinpath(@__DIR__, "generator.toml"))
 
