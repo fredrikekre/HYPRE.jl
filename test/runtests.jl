@@ -10,8 +10,6 @@ using SparseArrays
 using SparseMatricesCSR
 using Test
 
-Base.convert(::Type{Int32}, comm::MPI.Comm) = comm.val
-
 # Init HYPRE and MPI
 HYPRE.Init()
 

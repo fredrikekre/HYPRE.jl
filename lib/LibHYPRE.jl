@@ -2,8 +2,9 @@ using HYPRE_jll
 export HYPRE_jll
 
 using CEnum
+using MPI
 
-const MPI_Comm = Cint
+const MPI_Comm = MPI.MPI_Comm
 
 const MPI_Op = Cint
 
