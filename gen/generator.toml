@@ -1,22 +1,10 @@
 [general]
 library_name = "libHYPRE"
-output_file_path = "../lib/LibHYPRE.jl"
+output_common_file_path = "../lib/LibHYPRECommon.jl"
+output_api_file_path = "../lib/LibHYPREAPI.jl"
 jll_pkg_name = "HYPRE_jll"
 export_symbol_prefixes = []
 output_ignorelist = [
-    # Overflows Int32
-    "MPI_FLOAT_INT",
-    "MPI_DOUBLE_INT",
-    "MPI_LONG_INT",
-    "MPI_SHORT_INT",
-    "MPI_LONG_DOUBLE_INT",
-    # Uses NULL
-    "MPI_T_ENUM_NULL",
-    "MPI_T_CVAR_HANDLE_NULL",
-    "MPI_T_PVAR_HANDLE_NULL",
-    "MPI_T_PVAR_SESSION_NULL",
-    # Bogus expression: const MPI_ARGV_NULL = (Cchar * (*))(0)
-    "MPI_ARGV_NULL",
     # Undefined values DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MIN_EXP
     "HYPRE_REAL_MAX",
     "HYPRE_REAL_MIN",
@@ -24,4 +12,6 @@ output_ignorelist = [
     "HYPRE_REAL_MIN_EXP",
     # Bogus expression: const HYPRE_VERSION = ((("HYPRE_RELEASE_NAME Date Compiled: ")(__DATE__))(" "))(__TIME__)
     "HYPRE_VERSION",
+    # Filter out MPI stuff
+    "^[PQ]?MPI"
 ]
