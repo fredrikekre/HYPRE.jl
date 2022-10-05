@@ -10,7 +10,7 @@ options = load_options(joinpath(@__DIR__, "generator.toml"))
 
 args = get_default_args()
 push!(args, "-I$(hypre_include_dir)")
-push!(args, "-I$(mpi_include_dir)")
+push!(args, "-isystem$(mpi_include_dir)")
 
 # Compiler flags from Yggdrasil (??)
 # https://github.com/JuliaPackaging/Yggdrasil/blob/9d131ba0e4aa393b00f4d71ef5a3f909419a70a7/H/HYPRE/build_tarballs.jl

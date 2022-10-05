@@ -11,8 +11,6 @@ else # MPI < 0.20.0
 end
 
 
-mutable struct ADIOI_FileD end
-
 const HYPRE_BigInt = Cint
 
 const HYPRE_Int = Cint
@@ -3730,12 +3728,6 @@ const HYPRE_FMANGLE_BLAS = 0
 const HYPRE_FMANGLE_LAPACK = 0
 
 const HYPRE_USING_HOST_MEMORY = 1
-
-const NO_TAGS_WITH_MODIFIERS = 1
-
-const ROMIO_VERSION = 126
-
-const HAVE_MPI_GREQUEST = 1
 
 const HYPRE_MPI_BIG_INT = MPI_INT
 
