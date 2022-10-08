@@ -305,11 +305,14 @@ end
 ##################################################
 
 # TODO: This has some duplicated code with to_hypre_data(::SparseMatrixCSC, ilower, iupper)
-function Internals.to_hypre_data(A::SparseMatrixCSC, r::IndexRange, c::IndexRange)
-    @assert r.oid_to_lid isa UnitRange && r.oid_to_lid.start == 1
+function Internals.to_hypre_data(A::SparseMatrixCSC, r::PartitionedArrays.AbstractIndexSet, c::PartitionedArrays.AbstractIndexSet)
+    # @assert r.oid_to_lid isa UnitRange && r.oid_to_lid.start == 1
 
-    ilower = r.lid_to_gid[r.oid_to_lid.start]
-    iupper = r.lid_to_gid[r.oid_to_lid.stop]
+    lidlower = minimum(r.oid_to_lid)
+    lidupper = maximum(r.oid_to_lid)
+
+    ilower = r.lid_to_gid[lidlower]
+    iupper = r.lid_to_gid[lidupper]
     a_rows = rowvals(A)
     a_vals = nonzeros(A)
 
@@ -327,7 +330,7 @@ function Internals.to_hypre_data(A::SparseMatrixCSC, r::IndexRange, c::IndexRang
     @inbounds for j in 1:size(A, 2)
         for i in nzrange(A, j)
             row = a_rows[i]
-            row > r.oid_to_lid.stop && continue # Skip ghost rows
+            row > lidupper && continue # Skip ghost rows
             # grow = r.lid_to_gid[lrow]
             ncols[row] += 1
         end
@@ -347,7 +350,7 @@ function Internals.to_hypre_data(A::SparseMatrixCSC, r::IndexRange, c::IndexRang
     @inbounds for j in 1:size(A, 2)
         for i in nzrange(A, j)
             row = a_rows[i]
-            row > r.oid_to_lid.stop && continue # Skip ghost rows
+            row > lidupper && continue # Skip ghost rows
             k = lastinds[row] += 1
             val = a_vals[i]
             cols[k] = c.lid_to_gid[j]
@@ -361,13 +364,16 @@ end
 #       At least values should be possible to directly share, but cols needs to translated
 #       to global ids.
 function Internals.to_hypre_data(A::SparseMatrixCSR, r::IndexRange, c::IndexRange)
-    @assert r.oid_to_lid isa UnitRange && r.oid_to_lid.start == 1
+    #@assert r.oid_to_lid isa UnitRange && r.oid_to_lid.start == 1
 
-    ilower = r.lid_to_gid[r.oid_to_lid.start]
-    iupper = r.lid_to_gid[r.oid_to_lid.stop]
+    lidlower = minimum(r.oid_to_lid)
+    lidupper = maximum(r.oid_to_lid)
+
+    ilower = r.lid_to_gid[lidlower]
+    iupper = r.lid_to_gid[lidupper]
     a_cols = colvals(A)
     a_vals = nonzeros(A)
-    nnz = getrowptr(A)[r.oid_to_lid.stop + 1] - 1
+    nnz = getrowptr(A)[lidupper + 1] - 1
 
     # Initialize the data buffers HYPRE wants
     nrows = HYPRE_Int(iupper - ilower + 1)      # Total number of rows
@@ -445,8 +451,11 @@ function HYPREVector(v::PVector)
     b = HYPREVector(comm, ilower, iupper)
     # Set all the values
     map_parts(v.values, v.owned_values, v.rows.partition) do _, vo, vr
-        ilower_part = vr.lid_to_gid[vr.oid_to_lid.start]
-        iupper_part = vr.lid_to_gid[vr.oid_to_lid.stop]
+        lidlower = minimum(vr.oid_to_lid)
+        lidupper = maximum(vr.oid_to_lid)
+
+        ilower_part = vr.lid_to_gid[lidlower]
+        iupper_part = vr.lid_to_gid[lidupper]
 
         # Option 1: Set all values
         nvalues = HYPRE_Int(iupper_part - ilower_part + 1)
@@ -489,8 +498,11 @@ end
 function Base.copy!(dst::PVector{HYPRE_Complex}, src::HYPREVector)
     Internals.copy_check(src, dst)
     map_parts(dst.values, dst.owned_values, dst.rows.partition) do vv, _, vr
-        il_src_part = vr.lid_to_gid[vr.oid_to_lid.start]
-        iu_src_part = vr.lid_to_gid[vr.oid_to_lid.stop]
+        lidlower = minimum(vr.oid_to_lid)
+        lidupper = maximum(vr.oid_to_lid)
+
+        il_src_part = vr.lid_to_gid[lidlower]
+        iu_src_part = vr.lid_to_gid[lidupper]
         nvalues = HYPRE_Int(iu_src_part - il_src_part + 1)
         indices = collect(HYPRE_BigInt, il_src_part:iu_src_part)
 
@@ -510,8 +522,11 @@ function Base.copy!(dst::HYPREVector, src::PVector{HYPRE_Complex})
     # Re-initialize the vector
     @check HYPRE_IJVectorInitialize(dst.ijvector)
     map_parts(src.values, src.owned_values, src.rows.partition) do vv, _, vr
-        ilower_src_part = vr.lid_to_gid[vr.oid_to_lid.start]
-        iupper_src_part = vr.lid_to_gid[vr.oid_to_lid.stop]
+        lidlower = minimum(vr.oid_to_lid)
+        lidupper = maximum(vr.oid_to_lid)
+
+        ilower_src_part = vr.lid_to_gid[lidlower]
+        iupper_src_part = vr.lid_to_gid[lidupper]
         nvalues = HYPRE_Int(iupper_src_part - ilower_src_part + 1)
         indices = collect(HYPRE_BigInt, ilower_src_part:iupper_src_part)
         # TODO: Safe to use vv here? Owned values are always first?
