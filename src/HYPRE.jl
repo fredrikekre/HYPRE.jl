@@ -3,7 +3,7 @@
 module HYPRE
 
 using MPI: MPI
-using PartitionedArrays: IndexRange, MPIData, PSparseMatrix, PVector, PartitionedArrays,
+using PartitionedArrays: AbstractIndexSet, MPIData, PSparseMatrix, PVector, PartitionedArrays,
     SequentialData, map_parts
 using SparseArrays: SparseArrays, SparseMatrixCSC, nnz, nonzeros, nzrange, rowvals
 using SparseMatricesCSR: SparseMatrixCSR, colvals, getrowptr
@@ -305,7 +305,7 @@ end
 ##################################################
 
 # TODO: This has some duplicated code with to_hypre_data(::SparseMatrixCSC, ilower, iupper)
-function Internals.to_hypre_data(A::SparseMatrixCSC, r::PartitionedArrays.AbstractIndexSet, c::PartitionedArrays.AbstractIndexSet)
+function Internals.to_hypre_data(A::SparseMatrixCSC, r::AbstractIndexSet, c::AbstractIndexSet)
     # @assert r.oid_to_lid isa UnitRange && r.oid_to_lid.start == 1
 
     lidlower = minimum(r.oid_to_lid)
@@ -363,7 +363,7 @@ end
 # TODO: Possibly this can be optimized if it is possible to pass overlong vectors to HYPRE.
 #       At least values should be possible to directly share, but cols needs to translated
 #       to global ids.
-function Internals.to_hypre_data(A::SparseMatrixCSR, r::IndexRange, c::IndexRange)
+function Internals.to_hypre_data(A::SparseMatrixCSR, r::AbstractIndexSet, c::AbstractIndexSet)
     #@assert r.oid_to_lid isa UnitRange && r.oid_to_lid.start == 1
 
     lidlower = minimum(r.oid_to_lid)
