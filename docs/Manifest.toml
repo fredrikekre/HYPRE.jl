@@ -74,7 +74,7 @@ uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 deps = ["CEnum", "HYPRE_jll", "Libdl", "MPI", "PartitionedArrays", "SparseArrays", "SparseMatricesCSR"]
 path = ".."
 uuid = "b5ffcf37-a2bd-41ab-a3da-4bd9bc8ad771"
-version = "1.1.0"
+version = "1.2.0"
 
 [[deps.HYPRE_jll]]
 deps = ["Artifacts", "JLLWrappers", "LAPACK_jll", "LazyArtifacts", "Libdl", "MPICH_jll", "MPIPreferences", "MPItrampoline_jll", "MicrosoftMPI_jll", "OpenBLAS_jll", "OpenMPI_jll", "Pkg", "TOML"]
