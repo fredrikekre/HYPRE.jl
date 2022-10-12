@@ -524,7 +524,174 @@ function Base.copy!(dst::HYPREVector, src::PVector{HYPRE_Complex})
     return dst
 end
 
-# Solver interface
+
+####################
+## HYPREAssembler ##
+####################
+
+struct HYPREMatrixAssembler
+    A::HYPREMatrix
+    ncols::Vector{HYPRE_Int}
+    rows::Vector{HYPRE_BigInt}
+    cols::Vector{HYPRE_BigInt}
+    values::Vector{HYPRE_Complex}
+end
+
+struct HYPREVectorAssembler
+    b::HYPREVector
+    indices::Vector{HYPRE_BigInt}
+    values::Vector{HYPRE_Complex}
+end
+
+struct HYPREAssembler
+    A::HYPREMatrixAssembler
+    b::HYPREVectorAssembler
+end
+
+"""
+    HYPRE.start_assemble!(A::HYPREMatrix)                 -> HYPREMatrixAssembler
+    HYPRE.start_assemble!(b::HYPREVector)                 -> HYPREVectorAssembler
+    HYPRE.start_assemble!(A::HYPREMatrix, b::HYPREVector) -> HYPREAssembler
+
+Initialize a new assembly for matrix `A`, vector `b`, or for both. This zeroes out any
+previous data in the arrays. Return a `HYPREAssembler` with allocated data buffers needed to
+perform the assembly efficiently.
+
+See also: [`HYPRE.assemble!`](@ref), [`HYPRE.finish_assemble!`](@ref).
+"""
+start_assemble!
+
+function start_assemble!(A::HYPREMatrix)
+    if A.parmatrix != C_NULL
+        # This matrix have been assembled before, reset to 0
+        @check HYPRE_IJMatrixSetConstantValues(A.ijmatrix, 0)
+    end
+    @check HYPRE_IJMatrixInitialize(A.ijmatrix)
+    return HYPREMatrixAssembler(A, HYPRE_Int[], HYPRE_BigInt[], HYPRE_BigInt[], HYPRE_Complex[])
+end
+
+function start_assemble!(b::HYPREVector)
+    if b.parvector != C_NULL
+        # This vector have been assembled before, reset to 0
+        # See https://github.com/hypre-space/hypre/pull/689
+        # @check HYPRE_IJVectorSetConstantValues(b.ijvector, 0)
+    end
+    @check HYPRE_IJVectorInitialize(b.ijvector)
+    if b.parvector != C_NULL
+        nvalues = HYPRE_Int(b.iupper - b.ilower + 1)
+        indices = collect(HYPRE_BigInt, b.ilower:b.iupper)
+        values = zeros(HYPRE_Complex, nvalues)
+        @check HYPRE_IJVectorSetValues(b.ijvector, nvalues, indices, values)
+        # TODO: Do I need to assemble here?
+    end
+    return HYPREVectorAssembler(b, HYPRE_BigInt[], HYPRE_Complex[])
+end
+
+function start_assemble!(A::HYPREMatrix, b::HYPREVector)
+    return HYPREAssembler(start_assemble!(A), start_assemble!(b))
+end
+
+"""
+    HYPRE.assemble!(A::HYPREMatrixAssembler, ij, a::Matrix)
+    HYPRE.assemble!(A::HYPREVectorAssembler, ij, b::Vector)
+    HYPRE.assemble!(A::HYPREAssembler,       ij, a::Matrix, b::Vector)
+
+Assemble (by adding) matrix contribution `a`, vector contribution `b`, into the underlying
+array(s) of the assembler at global row and column indices `ij`.
+
+This is roughly equivalent to:
+```julia
+# A.A::HYPREMatrix
+A.A[ij, ij] += a
+
+# A.b::HYPREVector
+A.b[ij] += b
+```
+
+See also: [`HYPRE.start_assemble!`](@ref), [`HYPRE.finish_assemble!`](@ref).
+"""
+assemble!
+
+function assemble!(A::HYPREMatrixAssembler, ij::Vector, a::Matrix)
+    nrows, ncols, rows, cols, values = Internals.to_hypre_data(A, a, ij, ij)
+    @check HYPRE_IJMatrixAddToValues(A.A.ijmatrix, nrows, ncols, rows, cols, values)
+    return A
+end
+
+function assemble!(A::HYPREVectorAssembler, ij::Vector, a::Vector)
+    nvalues, indices, values = Internals.to_hypre_data(A, a, ij)
+    @check HYPRE_IJVectorAddToValues(A.b.ijvector, nvalues, indices, values)
+    return A
+end
+
+function assemble!(A::HYPREAssembler, ij::Vector, a::Matrix, b::Vector)
+    assemble!(A.A, ij, a)
+    assemble!(A.b, ij, b)
+    return A
+end
+
+function Internals.to_hypre_data(A::HYPREMatrixAssembler, a::Matrix, I::Vector, J::Vector)
+    size(a, 1) == length(I) || error("mismatching number of rows")
+    size(a, 2) == length(J) || error("mismatch number of cols")
+    nrows = HYPRE_Int(length(I))
+    # Resize cache vectors
+    ncols = resize!(A.ncols, nrows)
+    rows = resize!(A.rows, length(a))
+    cols = resize!(A.cols, length(a))
+    values = resize!(A.values, length(a))
+    # Fill vectors
+    ncols = fill!(ncols, HYPRE_Int(length(J)))
+    copyto!(rows, I)
+    idx = 0
+    for i in 1:length(I), j in 1:length(J)
+        idx += 1
+        cols[idx] = J[j]
+        values[idx] = a[i, j]
+    end
+    @assert idx == length(a)
+    return nrows, ncols, rows, cols, values
+end
+
+function Internals.to_hypre_data(A::HYPREVectorAssembler, b::Vector, I::Vector)
+    length(b) == length(I) || error("mismatching number of entries")
+    nvalues = HYPRE_Int(length(I))
+    # Resize cache vectors
+    indices = resize!(A.indices, nvalues)
+    values = resize!(A.values, nvalues)
+    # Fill vectors
+    copyto!(indices, I)
+    copyto!(values, b)
+    return nvalues, indices, values
+end
+
+"""
+    HYPRE.finish_assemble!(A::HYPREMatrixAssembler)
+    HYPRE.finish_assemble!(A::HYPREVectorAssembler)
+    HYPRE.finish_assemble!(A::HYPREAssembler)
+
+Finish the assembly. This synchronizes the data between processors.
+"""
+finish_assemble!
+
+function finish_assemble!(A::HYPREMatrixAssembler)
+    Internals.assemble_matrix(A.A)
+    return A.A
+end
+
+function finish_assemble!(A::HYPREVectorAssembler)
+    Internals.assemble_vector(A.b)
+    return A.b
+end
+
+function finish_assemble!(A::HYPREAssembler)
+    return finish_assemble!(A.A), finish_assemble!(A.b)
+end
+
+
+######################
+## Solver interface ##
+######################
+
 include("solvers.jl")
 include("solver_options.jl")
 

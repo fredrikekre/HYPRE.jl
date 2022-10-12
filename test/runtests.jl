@@ -10,6 +10,8 @@ using SparseArrays
 using SparseMatricesCSR
 using Test
 
+include("test_utils.jl")
+
 # Init HYPRE and MPI
 HYPRE.Init()
 
@@ -294,6 +296,62 @@ end
     pbc = fill!(copy(pb), 0)
     copy!(pbc, H)
     @test tomain(pbc) == tomain(pb)
+end
+
+@testset "HYPRE(Matrix|Vector)?Assembler" begin
+    comm = MPI.COMM_WORLD
+    # Assembly HYPREMatrix from ::Matrix
+    A = HYPREMatrix(comm, 1, 3)
+    AM = zeros(3, 3)
+    for i in 1:2
+        assembler = HYPRE.start_assemble!(A)
+        fill!(AM, 0)
+        for idx in ([1, 2], [3, 1])
+            a = rand(2, 2)
+            HYPRE.assemble!(assembler, idx, a)
+            AM[idx, idx] += a
+        end
+        f = HYPRE.finish_assemble!(assembler)
+        @test f === A
+        @test getindex_debug(A, 1:3, 1:3) == AM
+    end
+    # Assembly HYPREVector from ::Vector
+    b = HYPREVector(comm, 1, 3)
+    bv = zeros(3)
+    for i in 1:2
+        assembler = HYPRE.start_assemble!(b)
+        fill!(bv, 0)
+        for idx in ([1, 2], [3, 1])
+            c = rand(2)
+            HYPRE.assemble!(assembler, idx, c)
+            bv[idx] += c
+        end
+        f = HYPRE.finish_assemble!(assembler)
+        @test f === b
+        @test getindex_debug(b, 1:3) == bv
+    end
+    # Assembly HYPREMatrix/HYPREVector from ::Array
+    A = HYPREMatrix(comm, 1, 3)
+    AM = zeros(3, 3)
+    b = HYPREVector(comm, 1, 3)
+    bv = zeros(3)
+    for i in 1:2
+        assembler = HYPRE.start_assemble!(A, b)
+        fill!(AM, 0)
+        fill!(bv, 0)
+        for idx in ([1, 2], [3, 1])
+            a = rand(2, 2)
+            c = rand(2)
+            HYPRE.assemble!(assembler, idx, a, c)
+            AM[idx, idx] += a
+            bv[idx] += c
+        end
+        F, f = HYPRE.finish_assemble!(assembler)
+        @test F === A
+        @test f === b
+        @test getindex_debug(A, 1:3, 1:3) == AM
+        @test getindex_debug(b, 1:3) == bv
+    end
 end
 
 @testset "BiCGSTAB" begin
@@ -653,4 +711,16 @@ end
     ## solve
     x = HYPRE.solve(pcg, A, b)
     @test x ≈ A \ b atol=tol
+end
+
+@testset "MPI execution" begin
+    testfiles = joinpath.(@__DIR__, [
+        "test_assembler.jl",
+    ])
+    for file in testfiles
+        mpiexec() do mpi
+            r = run(ignorestatus(`$(mpi) -n 2 $(Base.julia_cmd()) $(file)`))
+            @test r.exitcode == 0
+        end
+    end
 end
