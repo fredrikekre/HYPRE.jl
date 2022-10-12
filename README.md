@@ -14,7 +14,25 @@ an interface that should be familiar to Julia programmers. This README includes 
 examples -- refer to the [documentation][docs-url] for more details, and for information
 about the included solvers and preconditioners and how to configure them.
 
-## Example: Single-core solve with standard sparse matrices
+## Installation
+
+HYPRE.jl can be installed from the Pkg REPL (press `]` in the Julia REPL to enter):
+
+```
+(@v1) pkg> add HYPRE
+```
+
+To configure MPI, see the [documentation for MPI.jl][mpi-docs].
+
+## Changes
+
+All notable changes are documented in [CHANGELOG.md](CHANGELOG.md).
+
+## Usage
+
+Some basic usage examples are shown below. See the [documentation][docs-url] for details.
+
+### Example: Single-core solve with standard sparse matrices
 
 It is possible to use Julia's standard sparse arrays (`SparseMatrixCSC` from the
 [SparseArrays.jl][sparse-stdlib] standard library, and `SparseMatrixCSR` from the
@@ -33,7 +51,7 @@ cg = HYPRE.PCG()
 x = HYPRE.solve(cg, A, b)
 ```
 
-## Example: Multi-core solve using PartitionedArrays.jl
+### Example: Multi-core solve using PartitionedArrays.jl
 
 For multi-core problems it is possible to use [PartitionedArrays.jl][partarrays] directly
 with HYPRE.jl. Once the linear system is setup the solver interface is identical. For
@@ -58,6 +76,7 @@ x = HYPRE.solve(bicg, A, b)
 
 [julia]: https://julialang.org/
 [hypre]: https://github.com/hypre-space/hypre
+[mpi-docs]: https://juliaparallel.org/MPI.jl/
 [sparse-stdlib]: https://github.com/JuliaSparse/SparseArrays.jl
 [sparsecsr]: https://github.com/gridap/SparseMatricesCSR.jl
 [partarrays]: https://github.com/fverdugo/PartitionedArrays.jl
