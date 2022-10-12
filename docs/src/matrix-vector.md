@@ -5,15 +5,59 @@ datastructures. Specifically it uses the [IJ System
 Interface](https://hypre.readthedocs.io/en/latest/api-int-ij.html) which can be used for
 general sparse matrices.
 
-HYPRE.jl defines conversion methods from standard Julia datastructures to `HYPREMatrix` and
-`HYPREVector`, respectively. See the following sections for details:
+`HYPREMatrix` and `HYPREVector` can be constructed either by assembling directly, or by
+first assembling into a Julia datastructure and the converting it. These various methods are
+outlined in the following sections:
 
 ```@contents
-Pages = ["hypre-matrix-vector.md"]
+Pages = ["matrix-vector.md"]
 Depth = 2:2
 ```
 
-## PartitionedArrays.jl (multi-process)
+
+## Direct assembly (multi-/single-process)
+
+Creating `HYPREMatrix` and/or `HYPREVector` directly is possible by first creating an
+assembler which is used to add all individual contributions to the matrix/vector. The
+required steps are:
+
+  1. Create a new matrix and/or vector using the constructor.
+  2. Create an assembler and initialize the assembling procedure using
+     [`HYPRE.start_assemble!`](@ref).
+  3. Assemble all non-zero contributions (e.g. element matrix/vector in a finite element
+     simulation) using [`HYPRE.assemble!`](@ref).
+  4. Finalize the assembly using [`HYPRE.finish_assemble!`](@ref).
+
+After these steps the matrix and vector are ready to pass to the solver. In case of multiple
+consecutive solves with the same sparsity pattern (e.g. multiple Newton steps, multiple time
+steps, ...) it is possible to reuse the same matrix by simply skipping the first step above.
+
+**Example pseudocode**
+
+```julia
+# MPI communicator
+comm = MPI.COMM_WORLD # MPI.COMM_SELF for single-process setups
+
+# Create empty matrix and vector -- this process owns rows ilower to iupper
+A = HYPREMatrix(comm, ilower, iupper)
+b = HYPREVector(comm, ilower, iupper)
+
+# Create assembler
+assembler = HYPRE.start_assemble!(A, b)
+
+# Assemble contributions from all elements owned by this process
+for element in owned_elements
+    Ae, be = compute_element_contribution(...)
+    global_indices = get_global_indices(...)
+    HYPRE.assemble!(assembler, global_indices, Ae, be)
+end
+
+# Finalize the assembly
+A, b = HYPRE.finish_assemble!(assembler)
+```
+
+
+## Create from PartitionedArrays.jl (multi-process)
 
 HYPRE.jl integrates seemlessly with `PSparseMatrix` and `PVector` from the
 [PartitionedArrays.jl](https://github.com/fverdugo/PartitionedArrays.jl) package. These can
@@ -71,7 +115,7 @@ copy!(x, x_h)
 ```
 
 
-## `SparseMatrixCSC` / `SparseMatrixCSR` (single-process)
+## Create from `SparseMatrixCSC` / `SparseMatrixCSR` (single-process)
 
 HYPRE.jl also support working directly with `SparseMatrixCSC` (from the
 [SparseArrays.jl](https://github.com/JuliaSparse/SparseArrays.jl) standard library) and
@@ -100,10 +144,3 @@ x = solve(solver, A, b)
 x = zeros(length(b))
 solve!(solver, x, A, b)
 ```
-
-
-## `SparseMatrixCSC` / `SparseMatrixCSR` (multi-process)
-
-!!! warning
-    This interface isn't finalized yet and is therefore not documented since it
-    is subject to change.
