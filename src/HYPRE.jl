@@ -592,31 +592,32 @@ function start_assemble!(A::HYPREMatrix, b::HYPREVector)
 end
 
 """
-    HYPRE.assemble!(A::HYPREMatrixAssembler, ij, a::Matrix)
-    HYPRE.assemble!(A::HYPREVectorAssembler, ij, b::Vector)
-    HYPRE.assemble!(A::HYPREAssembler,       ij, a::Matrix, b::Vector)
+    HYPRE.assemble!(A::HYPREMatrixAssembler, i, j, a::Matrix)
+    HYPRE.assemble!(A::HYPREVectorAssembler, i,    b::Vector)
+    HYPRE.assemble!(A::HYPREAssembler,       ij,   a::Matrix, b::Vector)
 
 Assemble (by adding) matrix contribution `a`, vector contribution `b`, into the underlying
-array(s) of the assembler at global row and column indices `ij`.
+array(s) of the assembler at global row indices `i` and column indices `j`.
 
 This is roughly equivalent to:
 ```julia
 # A.A::HYPREMatrix
-A.A[ij, ij] += a
+A.A[i, j] += a
 
 # A.b::HYPREVector
-A.b[ij] += b
+A.b[i] += b
 ```
 
 See also: [`HYPRE.start_assemble!`](@ref), [`HYPRE.finish_assemble!`](@ref).
 """
 assemble!
 
-function assemble!(A::HYPREMatrixAssembler, ij::Vector, a::Matrix)
-    nrows, ncols, rows, cols, values = Internals.to_hypre_data(A, a, ij, ij)
+function assemble!(A::HYPREMatrixAssembler, i::Vector, j::Vector, a::Matrix)
+    nrows, ncols, rows, cols, values = Internals.to_hypre_data(A, a, i, j)
     @check HYPRE_IJMatrixAddToValues(A.A.ijmatrix, nrows, ncols, rows, cols, values)
     return A
 end
+@deprecate assemble!(A::HYPREMatrixAssembler, ij::Vector, a::Matrix) assemble!(A, ij, ij, a) false
 
 function assemble!(A::HYPREVectorAssembler, ij::Vector, a::Vector)
     nvalues, indices, values = Internals.to_hypre_data(A, a, ij)
@@ -625,7 +626,7 @@ function assemble!(A::HYPREVectorAssembler, ij::Vector, a::Vector)
 end
 
 function assemble!(A::HYPREAssembler, ij::Vector, a::Matrix, b::Vector)
-    assemble!(A.A, ij, a)
+    assemble!(A.A, ij, ij, a)
     assemble!(A.b, ij, b)
     return A
 end
