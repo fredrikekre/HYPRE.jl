@@ -203,6 +203,7 @@ function Internals.to_hypre_data(A::SparseMatrixCSC, ilower, iupper)
             values[k] = val
         end
     end
+    @assert nrows == length(ncols) == length(rows)
     return nrows, ncols, rows, cols, values
 end
 
@@ -233,6 +234,7 @@ function Internals.to_hypre_data(A::SparseMatrixCSR, ilower, iupper)
         end
     end
     @assert nnz == k
+    @assert nrows == length(ncols) == length(rows)
     return nrows, ncols, rows, cols, values
 end
 
@@ -354,6 +356,7 @@ function Internals.to_hypre_data(A::SparseMatrixCSC, r::IndexRange, c::IndexRang
             values[k] = val
         end
     end
+    @assert nrows == length(ncols) == length(rows)
     return nrows, ncols, rows, cols, values
 end
 
@@ -390,6 +393,7 @@ function Internals.to_hypre_data(A::SparseMatrixCSR, r::IndexRange, c::IndexRang
         end
     end
     @assert nnz == k
+    @assert nrows == length(ncols) == length(rows)
     return nrows, ncols, rows, cols, values
 end
 
@@ -633,11 +637,11 @@ end
 
 function Internals.to_hypre_data(A::HYPREMatrixAssembler, a::Matrix, I::Vector, J::Vector)
     size(a, 1) == length(I) || error("mismatching number of rows")
-    size(a, 2) == length(J) || error("mismatch number of cols")
+    size(a, 2) == length(J) || error("mismatching number of cols")
     nrows = HYPRE_Int(length(I))
     # Resize cache vectors
     ncols = resize!(A.ncols, nrows)
-    rows = resize!(A.rows, length(a))
+    rows = resize!(A.rows, nrows)
     cols = resize!(A.cols, length(a))
     values = resize!(A.values, length(a))
     # Fill vectors
@@ -650,6 +654,7 @@ function Internals.to_hypre_data(A::HYPREMatrixAssembler, a::Matrix, I::Vector, 
         values[idx] = a[i, j]
     end
     @assert idx == length(a)
+    @assert nrows == length(ncols) == length(rows)
     return nrows, ncols, rows, cols, values
 end
 
