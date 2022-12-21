@@ -310,6 +310,9 @@ end
             a = rand(2, 2)
             HYPRE.assemble!(assembler, idx, idx, a)
             AM[idx, idx] += a
+            ar = rand(1, 2)
+            HYPRE.assemble!(assembler, [2], idx, ar)
+            AM[[2], idx] += ar
         end
         f = HYPRE.finish_assemble!(assembler)
         @test f === A
