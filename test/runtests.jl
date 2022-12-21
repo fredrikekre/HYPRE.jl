@@ -308,7 +308,7 @@ end
         fill!(AM, 0)
         for idx in ([1, 2], [3, 1])
             a = rand(2, 2)
-            HYPRE.assemble!(assembler, idx, a)
+            HYPRE.assemble!(assembler, idx, idx, a)
             AM[idx, idx] += a
         end
         f = HYPRE.finish_assemble!(assembler)

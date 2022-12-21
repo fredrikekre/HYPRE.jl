@@ -51,7 +51,7 @@ for i in 1:2
     fill!(AM, 0)
     for n in N
         idx, a, _ = values_and_indices(n)
-        HYPRE.assemble!(assembler, idx, a)
+        HYPRE.assemble!(assembler, idx, idx, a)
         AM[idx, idx] += a
     end
     f = HYPRE.finish_assemble!(assembler)
