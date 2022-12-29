@@ -7,12 +7,14 @@ Abstract super type of all the wrapped HYPRE solvers.
 """
 abstract type HYPRESolver end
 
-function Internals.safe_finalizer(Destroy)
-    # Only calls the Destroy if pointer not C_NULL
-    return function(solver)
-        if solver.solver != C_NULL
-            Destroy(solver.solver)
-            solver.solver = C_NULL
+function Internals.safe_finalizer(Destroy, solver)
+    # Add the solver to object tracker for possible atexit finalizing
+    push!(Internals.HYPRE_OBJECTS, solver => nothing)
+    # Add a finalizer that only calls Destroy if pointer not C_NULL
+    finalizer(solver) do s
+        if s.solver != C_NULL
+            Destroy(s.solver)
+            s.solver = C_NULL
         end
     end
 end
@@ -109,7 +111,7 @@ mutable struct BiCGSTAB <: HYPRESolver
         @check HYPRE_ParCSRBiCGSTABCreate(comm, solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(Internals.safe_finalizer(HYPRE_ParCSRBiCGSTABDestroy), solver)
+        Internals.safe_finalizer(HYPRE_ParCSRBiCGSTABDestroy, solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -157,7 +159,7 @@ mutable struct BoomerAMG <: HYPRESolver
         @check HYPRE_BoomerAMGCreate(solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(Internals.safe_finalizer(HYPRE_BoomerAMGDestroy), solver)
+        Internals.safe_finalizer(HYPRE_BoomerAMGDestroy, solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -202,7 +204,7 @@ mutable struct FlexGMRES <: HYPRESolver
         @check HYPRE_ParCSRFlexGMRESCreate(comm, solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(Internals.safe_finalizer(HYPRE_ParCSRFlexGMRESDestroy), solver)
+        Internals.safe_finalizer(HYPRE_ParCSRFlexGMRESDestroy, solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -285,7 +287,7 @@ mutable struct GMRES <: HYPRESolver
         @check HYPRE_ParCSRGMRESCreate(comm, solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(Internals.safe_finalizer(HYPRE_ParCSRGMRESDestroy), solver)
+        Internals.safe_finalizer(HYPRE_ParCSRGMRESDestroy, solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -330,7 +332,7 @@ mutable struct Hybrid <: HYPRESolver
         @check HYPRE_ParCSRHybridCreate(solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(Internals.safe_finalizer(HYPRE_ParCSRHybridDestroy), solver)
+        Internals.safe_finalizer(HYPRE_ParCSRHybridDestroy, solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -379,7 +381,7 @@ mutable struct ILU <: HYPRESolver
         @check HYPRE_ILUCreate(solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(Internals.safe_finalizer(HYPRE_ILUDestroy), solver)
+        Internals.safe_finalizer(HYPRE_ILUDestroy, solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -426,7 +428,7 @@ mutable struct ParaSails <: HYPRESolver
         @check HYPRE_ParCSRParaSailsCreate(comm, solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(Internals.safe_finalizer(HYPRE_ParCSRParaSailsDestroy), solver)
+        Internals.safe_finalizer(HYPRE_ParCSRParaSailsDestroy, solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver
@@ -461,7 +463,7 @@ mutable struct PCG <: HYPRESolver
         @check HYPRE_ParCSRPCGCreate(comm, solver_ref)
         solver.solver = solver_ref[]
         # Attach a finalizer
-        finalizer(Internals.safe_finalizer(HYPRE_ParCSRPCGDestroy), solver)
+        Internals.safe_finalizer(HYPRE_ParCSRPCGDestroy, solver)
         # Set the options
         Internals.set_options(solver, kwargs)
         return solver

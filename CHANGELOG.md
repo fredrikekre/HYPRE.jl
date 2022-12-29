@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Rectangular matrices can now be assembled by the new method
    `HYPRE.assemble!(::HYPREMatrixAssembler, i::Vector, j::Vector, a::Matrix)` where `i` are
    the rows and `j` the columns. ([#7][github-7])
+### Fixed
+ - All created HYPRE objects (`HYPREMatrix`, `HYPREVector`, and `HYPRESolver`s) are now kept
+   track of internally and explicitly `finalize`d (if they haven't been GC'd) before
+   finalizing HYPRE. This fixes a "race condition" where MPI and/or HYPRE would finalize
+   before these Julia objects are garbage collected and finalized. ([#8][github-8])
 ### Deprecated
  - The method `HYPRE.assemble!(A::HYPREMatrixAssembler, ij::Vector, a::Matrix)` have been
    deprecated in favor of `HYPRE.assemble!(A::HYPREMatrixAssembler, i::Vector, j::Vector,
@@ -37,6 +42,7 @@ Initial release of HYPRE.jl.
 [github-5]: https://github.com/fredrikekre/HYPRE.jl/pull/5
 [github-6]: https://github.com/fredrikekre/HYPRE.jl/pull/6
 [github-7]: https://github.com/fredrikekre/HYPRE.jl/pull/7
+[github-8]: https://github.com/fredrikekre/HYPRE.jl/pull/8
 
 [1.0.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.0.0
 [1.1.0]: https://github.com/fredrikekre/HYPRE.jl/compare/v1.0.0...v1.1.0

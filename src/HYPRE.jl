@@ -38,7 +38,12 @@ function Init(; finalize_atexit=true)
     if finalize_atexit
         # TODO: MPI only calls the finalizer if not exiting due to a Julia exeption. Does
         #       the same reasoning apply here?
-        atexit(HYPRE_Finalize)
+        atexit() do
+            # Finalize any HYPRE objects that are still alive
+            foreach(finalize, keys(Internals.HYPRE_OBJECTS))
+            # Finalize the library
+            HYPRE_Finalize()
+        end
     end
     return nothing
 end
@@ -67,6 +72,7 @@ function HYPREMatrix(comm::MPI.Comm, ilower::Integer,        iupper::Integer,
     A.ijmatrix = ijmatrix_ref[]
     # Attach a finalizer
     finalizer(x -> HYPRE_IJMatrixDestroy(x.ijmatrix), A)
+    push!(Internals.HYPRE_OBJECTS, A => nothing)
     # Set storage type
     @check HYPRE_IJMatrixSetObjectType(A.ijmatrix, HYPRE_PARCSR)
     # Initialize to make ready for setting values
@@ -106,6 +112,7 @@ function HYPREVector(comm::MPI.Comm, ilower::Integer, iupper::Integer)
     b.ijvector = ijvector_ref[]
     # Attach a finalizer
     finalizer(x -> HYPRE_IJVectorDestroy(x.ijvector), b)
+    push!(Internals.HYPRE_OBJECTS, b => nothing)
     # Set storage type
     @check HYPRE_IJVectorSetObjectType(b.ijvector, HYPRE_PARCSR)
     # Initialize to make ready for setting values
