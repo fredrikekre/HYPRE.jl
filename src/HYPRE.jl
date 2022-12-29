@@ -71,7 +71,12 @@ function HYPREMatrix(comm::MPI.Comm, ilower::Integer,        iupper::Integer,
     @check HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, ijmatrix_ref)
     A.ijmatrix = ijmatrix_ref[]
     # Attach a finalizer
-    finalizer(x -> HYPRE_IJMatrixDestroy(x.ijmatrix), A)
+    finalizer(A) do x
+        if x.ijmatrix != C_NULL
+            HYPRE_IJMatrixDestroy(x.ijmatrix)
+            x.ijmatrix = x.parmatrix = C_NULL
+        end
+    end
     push!(Internals.HYPRE_OBJECTS, A => nothing)
     # Set storage type
     @check HYPRE_IJMatrixSetObjectType(A.ijmatrix, HYPRE_PARCSR)
@@ -111,7 +116,12 @@ function HYPREVector(comm::MPI.Comm, ilower::Integer, iupper::Integer)
     @check HYPRE_IJVectorCreate(comm, ilower, iupper, ijvector_ref)
     b.ijvector = ijvector_ref[]
     # Attach a finalizer
-    finalizer(x -> HYPRE_IJVectorDestroy(x.ijvector), b)
+    finalizer(b) do x
+        if x.ijvector != C_NULL
+            HYPRE_IJVectorDestroy(x.ijvector)
+            x.ijvector = x.parvector = C_NULL
+        end
+    end
     push!(Internals.HYPRE_OBJECTS, b => nothing)
     # Set storage type
     @check HYPRE_IJVectorSetObjectType(b.ijvector, HYPRE_PARCSR)
