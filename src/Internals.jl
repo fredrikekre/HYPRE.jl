@@ -16,4 +16,6 @@ function setup_func end
 function solve_func end
 function to_hypre_data end
 
+const HYPRE_OBJECTS = WeakKeyDict{Any, Nothing}()
+
 end # module Internals
