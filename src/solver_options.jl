@@ -4,8 +4,7 @@
 
 Internals.set_options(::HYPRESolver, kwargs) = nothing
 
-function Internals.set_options(s::BiCGSTAB, kwargs)
-    solver = s.solver
+function Internals.set_options(solver::BiCGSTAB, kwargs)
     for (k, v) in kwargs
         if k === :ConvergenceFactorTol
             @check HYPRE_BiCGSTABSetConvergenceFactorTol(solver, v)
@@ -19,7 +18,7 @@ function Internals.set_options(s::BiCGSTAB, kwargs)
             @check HYPRE_ParCSRBiCGSTABSetMinIter(solver, v)
         elseif k === :Precond
             Internals.set_precond_defaults(v)
-            Internals.set_precond(s, v)
+            Internals.set_precond(solver, v)
         elseif k === :PrintLevel
             @check HYPRE_ParCSRBiCGSTABSetPrintLevel(solver, v)
         elseif k === :StopCrit
@@ -32,8 +31,7 @@ function Internals.set_options(s::BiCGSTAB, kwargs)
     end
 end
 
-function Internals.set_options(s::BoomerAMG, kwargs)
-    solver = s.solver
+function Internals.set_options(solver::BoomerAMG, kwargs)
     for (k, v) in kwargs
         if k === :ADropTol
             @check HYPRE_BoomerAMGSetADropTol(solver, v)
@@ -289,8 +287,7 @@ function Internals.set_options(s::BoomerAMG, kwargs)
     end
 end
 
-function Internals.set_options(s::FlexGMRES, kwargs)
-    solver = s.solver
+function Internals.set_options(solver::FlexGMRES, kwargs)
     for (k, v) in kwargs
         if k === :ConvergenceFactorTol
             @check HYPRE_FlexGMRESSetConvergenceFactorTol(solver, v)
@@ -308,7 +305,7 @@ function Internals.set_options(s::FlexGMRES, kwargs)
             @check HYPRE_ParCSRFlexGMRESSetModifyPC(solver, v)
         elseif k === :Precond
             Internals.set_precond_defaults(v)
-            Internals.set_precond(s, v)
+            Internals.set_precond(solver, v)
         elseif k === :PrintLevel
             @check HYPRE_ParCSRFlexGMRESSetPrintLevel(solver, v)
         elseif k === :Tol
@@ -319,8 +316,7 @@ function Internals.set_options(s::FlexGMRES, kwargs)
     end
 end
 
-function Internals.set_options(s::GMRES, kwargs)
-    solver = s.solver
+function Internals.set_options(solver::GMRES, kwargs)
     for (k, v) in kwargs
         if k === :ConvergenceFactorTol
             @check HYPRE_GMRESSetConvergenceFactorTol(solver, v)
@@ -340,7 +336,7 @@ function Internals.set_options(s::GMRES, kwargs)
             @check HYPRE_ParCSRGMRESSetMinIter(solver, v)
         elseif k === :Precond
             Internals.set_precond_defaults(v)
-            Internals.set_precond(s, v)
+            Internals.set_precond(solver, v)
         elseif k === :PrintLevel
             @check HYPRE_ParCSRGMRESSetPrintLevel(solver, v)
         elseif k === :StopCrit
@@ -353,8 +349,7 @@ function Internals.set_options(s::GMRES, kwargs)
     end
 end
 
-function Internals.set_options(s::Hybrid, kwargs)
-    solver = s.solver
+function Internals.set_options(solver::Hybrid, kwargs)
     for (k, v) in kwargs
         if k === :AbsoluteTol
             @check HYPRE_ParCSRHybridSetAbsoluteTol(solver, v)
@@ -424,7 +419,7 @@ function Internals.set_options(s::Hybrid, kwargs)
             @check HYPRE_ParCSRHybridSetPMaxElmts(solver, v)
         elseif k === :Precond
             Internals.set_precond_defaults(v)
-            Internals.set_precond(s, v)
+            Internals.set_precond(solver, v)
         elseif k === :PrintLevel
             @check HYPRE_ParCSRHybridSetPrintLevel(solver, v)
         elseif k === :RecomputeResidual
@@ -463,8 +458,7 @@ function Internals.set_options(s::Hybrid, kwargs)
     end
 end
 
-function Internals.set_options(s::ILU, kwargs)
-    solver = s.solver
+function Internals.set_options(solver::ILU, kwargs)
     for (k, v) in kwargs
         if k === :DropThreshold
             @check HYPRE_ILUSetDropThreshold(solver, v)
@@ -498,8 +492,7 @@ function Internals.set_options(s::ILU, kwargs)
     end
 end
 
-function Internals.set_options(s::ParaSails, kwargs)
-    solver = s.solver
+function Internals.set_options(solver::ParaSails, kwargs)
     for (k, v) in kwargs
         if k === :Filter
             @check HYPRE_ParCSRParaSailsSetFilter(solver, v)
@@ -519,8 +512,7 @@ function Internals.set_options(s::ParaSails, kwargs)
     end
 end
 
-function Internals.set_options(s::PCG, kwargs)
-    solver = s.solver
+function Internals.set_options(solver::PCG, kwargs)
     for (k, v) in kwargs
         if k === :AbsoluteTolFactor
             @check HYPRE_PCGSetAbsoluteTolFactor(solver, v)
@@ -540,7 +532,7 @@ function Internals.set_options(s::PCG, kwargs)
             @check HYPRE_ParCSRPCGSetMaxIter(solver, v)
         elseif k === :Precond
             Internals.set_precond_defaults(v)
-            Internals.set_precond(s, v)
+            Internals.set_precond(solver, v)
         elseif k === :PrintLevel
             @check HYPRE_ParCSRPCGSetPrintLevel(solver, v)
         elseif k === :RelChange

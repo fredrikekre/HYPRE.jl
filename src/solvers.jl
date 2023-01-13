@@ -13,11 +13,15 @@ function Internals.safe_finalizer(Destroy, solver)
     # Add a finalizer that only calls Destroy if pointer not C_NULL
     finalizer(solver) do s
         if s.solver != C_NULL
-            Destroy(s.solver)
+            Destroy(s)
             s.solver = C_NULL
         end
     end
 end
+
+# Defining unsafe_convert enables ccall to automatically convert solver::HYPRESolver to
+# HYPRE_Solver while also making sure solver won't be GC'd and finalized.
+Base.unsafe_convert(::Type{HYPRE_Solver}, solver::HYPRESolver) = solver.solver
 
 # Fallback for the solvers that doesn't have required defaults
 Internals.set_precond_defaults(::HYPRESolver) = nothing
@@ -122,8 +126,8 @@ end
 const ParCSRBiCGSTAB = BiCGSTAB
 
 function solve!(bicg::BiCGSTAB, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_ParCSRBiCGSTABSetup(bicg.solver, A.parmatrix, b.parvector, x.parvector)
-    @check HYPRE_ParCSRBiCGSTABSolve(bicg.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ParCSRBiCGSTABSetup(bicg, A, b, x)
+    @check HYPRE_ParCSRBiCGSTABSolve(bicg, A, b, x)
     return x
 end
 
@@ -134,7 +138,7 @@ function Internals.set_precond(bicg::BiCGSTAB, p::HYPRESolver)
     bicg.precond = p
     solve_f = Internals.solve_func(p)
     setup_f = Internals.setup_func(p)
-    @check HYPRE_ParCSRBiCGSTABSetPrecond(bicg.solver, solve_f, setup_f, p.solver)
+    @check HYPRE_ParCSRBiCGSTABSetPrecond(bicg, solve_f, setup_f, p)
     return nothing
 end
 
@@ -169,8 +173,8 @@ mutable struct BoomerAMG <: HYPRESolver
 end
 
 function solve!(amg::BoomerAMG, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_BoomerAMGSetup(amg.solver, A.parmatrix, b.parvector, x.parvector)
-    @check HYPRE_BoomerAMGSolve(amg.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_BoomerAMGSetup(amg, A, b, x)
+    @check HYPRE_BoomerAMGSolve(amg, A, b, x)
     return x
 end
 
@@ -215,8 +219,8 @@ mutable struct FlexGMRES <: HYPRESolver
 end
 
 function solve!(flex::FlexGMRES, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_ParCSRFlexGMRESSetup(flex.solver, A.parmatrix, b.parvector, x.parvector)
-    @check HYPRE_ParCSRFlexGMRESSolve(flex.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ParCSRFlexGMRESSetup(flex, A, b, x)
+    @check HYPRE_ParCSRFlexGMRESSolve(flex, A, b, x)
     return x
 end
 
@@ -227,7 +231,7 @@ function Internals.set_precond(flex::FlexGMRES, p::HYPRESolver)
     flex.precond = p
     solve_f = Internals.solve_func(p)
     setup_f = Internals.setup_func(p)
-    @check HYPRE_ParCSRFlexGMRESSetPrecond(flex.solver, solve_f, setup_f, p.solver)
+    @check HYPRE_ParCSRFlexGMRESSetPrecond(flex, solve_f, setup_f, p)
     return nothing
 end
 
@@ -254,8 +258,8 @@ end
 #end
 
 #function solve!(fsai::FSAI, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-#    @check HYPRE_FSAISetup(fsai.solver, A.parmatrix, b.parvector, x.parvector)
-#    @check HYPRE_FSAISolve(fsai.solver, A.parmatrix, b.parvector, x.parvector)
+#    @check HYPRE_FSAISetup(fsai, A, b, x)
+#    @check HYPRE_FSAISolve(fsai, A, b, x)
 #    return x
 #end
 
@@ -300,8 +304,8 @@ mutable struct GMRES <: HYPRESolver
 end
 
 function solve!(gmres::GMRES, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_ParCSRGMRESSetup(gmres.solver, A.parmatrix, b.parvector, x.parvector)
-    @check HYPRE_ParCSRGMRESSolve(gmres.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ParCSRGMRESSetup(gmres, A, b, x)
+    @check HYPRE_ParCSRGMRESSolve(gmres, A, b, x)
     return x
 end
 
@@ -312,7 +316,7 @@ function Internals.set_precond(gmres::GMRES, p::HYPRESolver)
     gmres.precond = p
     solve_f = Internals.solve_func(p)
     setup_f = Internals.setup_func(p)
-    @check HYPRE_ParCSRGMRESSetPrecond(gmres.solver, solve_f, setup_f, p.solver)
+    @check HYPRE_ParCSRGMRESSetPrecond(gmres, solve_f, setup_f, p)
     return nothing
 end
 
@@ -347,8 +351,8 @@ mutable struct Hybrid <: HYPRESolver
 end
 
 function solve!(hybrid::Hybrid, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_ParCSRHybridSetup(hybrid.solver, A.parmatrix, b.parvector, x.parvector)
-    @check HYPRE_ParCSRHybridSolve(hybrid.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ParCSRHybridSetup(hybrid, A, b, x)
+    @check HYPRE_ParCSRHybridSolve(hybrid, A, b, x)
     return x
 end
 
@@ -362,7 +366,7 @@ function Internals.set_precond(hybrid::Hybrid, p::HYPRESolver)
     # Deactivate the finalizer of p since the HYBRIDDestroy function does this,
     # see https://github.com/hypre-space/hypre/issues/699
     finalizer(x -> (x.solver = C_NULL), p)
-    @check HYPRE_ParCSRHybridSetPrecond(hybrid.solver, solve_f, setup_f, p.solver)
+    @check HYPRE_ParCSRHybridSetPrecond(hybrid, solve_f, setup_f, p)
     return nothing
 end
 
@@ -397,8 +401,8 @@ mutable struct ILU <: HYPRESolver
 end
 
 function solve!(ilu::ILU, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_ILUSetup(ilu.solver, A.parmatrix, b.parvector, x.parvector)
-    @check HYPRE_ILUSolve(ilu.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ILUSetup(ilu, A, b, x)
+    @check HYPRE_ILUSolve(ilu, A, b, x)
     return x
 end
 
@@ -482,8 +486,8 @@ end
 const ParCSRPCG = PCG
 
 function solve!(pcg::PCG, x::HYPREVector, A::HYPREMatrix, b::HYPREVector)
-    @check HYPRE_ParCSRPCGSetup(pcg.solver, A.parmatrix, b.parvector, x.parvector)
-    @check HYPRE_ParCSRPCGSolve(pcg.solver, A.parmatrix, b.parvector, x.parvector)
+    @check HYPRE_ParCSRPCGSetup(pcg, A, b, x)
+    @check HYPRE_ParCSRPCGSolve(pcg, A, b, x)
     return x
 end
 
@@ -494,6 +498,6 @@ function Internals.set_precond(pcg::PCG, p::HYPRESolver)
     pcg.precond = p
     solve_f = Internals.solve_func(p)
     setup_f = Internals.setup_func(p)
-    @check HYPRE_ParCSRPCGSetPrecond(pcg.solver, solve_f, setup_f, p.solver)
+    @check HYPRE_ParCSRPCGSetPrecond(pcg, solve_f, setup_f, p)
     return nothing
 end

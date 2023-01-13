@@ -2,8 +2,7 @@ using HYPRE.LibHYPRE
 
 function generate_options(io, structname, prefixes...)
     println(io, "")
-    println(io, "function Internals.set_options(s::$(structname), kwargs)")
-    println(io, "    solver = s.solver")
+    println(io, "function Internals.set_options(solver::$(structname), kwargs)")
     println(io, "    for (k, v) in kwargs")
 
     ns = Tuple{Symbol,String}[]
@@ -29,7 +28,7 @@ function generate_options(io, structname, prefixes...)
         println(io)
         if k == "Precond"
             println(io, "            Internals.set_precond_defaults(v)")
-            println(io, "            Internals.set_precond(s, v)")
+            println(io, "            Internals.set_precond(solver, v)")
         elseif nargs == 1
             println(io, "            @check ", n, "(solver)")
         elseif nargs == 2
