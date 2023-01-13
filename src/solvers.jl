@@ -104,9 +104,10 @@ Create a `BiCGSTAB` solver. See HYPRE API reference for details and supported se
 mutable struct BiCGSTAB <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
+    precond::Union{HYPRESolver,Nothing}
     function BiCGSTAB(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
         # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRBiCGSTABCreate
-        solver = new(comm, C_NULL)
+        solver = new(comm, C_NULL, nothing)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
         @check HYPRE_ParCSRBiCGSTABCreate(comm, solver_ref)
         solver.solver = solver_ref[]
@@ -130,6 +131,7 @@ Internals.setup_func(::BiCGSTAB) = HYPRE_ParCSRBiCGSTABSetup
 Internals.solve_func(::BiCGSTAB) = HYPRE_ParCSRBiCGSTABSolve
 
 function Internals.set_precond(bicg::BiCGSTAB, p::HYPRESolver)
+    bicg.precond = p
     solve_f = Internals.solve_func(p)
     setup_f = Internals.setup_func(p)
     @check HYPRE_ParCSRBiCGSTABSetPrecond(bicg.solver, solve_f, setup_f, p.solver)
@@ -197,9 +199,10 @@ Create a `FlexGMRES` solver. See HYPRE API reference for details and supported s
 mutable struct FlexGMRES <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
+    precond::Union{HYPRESolver,Nothing}
     function FlexGMRES(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
         # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRFlexGMRESCreate
-        solver = new(comm, C_NULL)
+        solver = new(comm, C_NULL, nothing)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
         @check HYPRE_ParCSRFlexGMRESCreate(comm, solver_ref)
         solver.solver = solver_ref[]
@@ -221,6 +224,7 @@ Internals.setup_func(::FlexGMRES) = HYPRE_ParCSRFlexGMRESSetup
 Internals.solve_func(::FlexGMRES) = HYPRE_ParCSRFlexGMRESSolve
 
 function Internals.set_precond(flex::FlexGMRES, p::HYPRESolver)
+    flex.precond = p
     solve_f = Internals.solve_func(p)
     setup_f = Internals.setup_func(p)
     @check HYPRE_ParCSRFlexGMRESSetPrecond(flex.solver, solve_f, setup_f, p.solver)
@@ -280,9 +284,10 @@ Create a `GMRES` solver. See HYPRE API reference for details and supported setti
 mutable struct GMRES <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
+    precond::Union{HYPRESolver,Nothing}
     function GMRES(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
         # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRGMRESCreate
-        solver = new(comm, C_NULL)
+        solver = new(comm, C_NULL, nothing)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
         @check HYPRE_ParCSRGMRESCreate(comm, solver_ref)
         solver.solver = solver_ref[]
@@ -304,6 +309,7 @@ Internals.setup_func(::GMRES) = HYPRE_ParCSRGMRESSetup
 Internals.solve_func(::GMRES) = HYPRE_ParCSRGMRESSolve
 
 function Internals.set_precond(gmres::GMRES, p::HYPRESolver)
+    gmres.precond = p
     solve_f = Internals.solve_func(p)
     setup_f = Internals.setup_func(p)
     @check HYPRE_ParCSRGMRESSetPrecond(gmres.solver, solve_f, setup_f, p.solver)
@@ -326,8 +332,9 @@ Create a `Hybrid` solver. See HYPRE API reference for details and supported sett
 """
 mutable struct Hybrid <: HYPRESolver
     solver::HYPRE_Solver
+    precond::Union{HYPRESolver,Nothing}
     function Hybrid(; kwargs...)
-        solver = new(C_NULL)
+        solver = new(C_NULL, nothing)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
         @check HYPRE_ParCSRHybridCreate(solver_ref)
         solver.solver = solver_ref[]
@@ -349,6 +356,7 @@ Internals.setup_func(::Hybrid) = HYPRE_ParCSRHybridSetup
 Internals.solve_func(::Hybrid) = HYPRE_ParCSRHybridSolve
 
 function Internals.set_precond(hybrid::Hybrid, p::HYPRESolver)
+    hybrid.precond = p
     solve_f = Internals.solve_func(p)
     setup_f = Internals.setup_func(p)
     # Deactivate the finalizer of p since the HYBRIDDestroy function does this,
@@ -456,9 +464,10 @@ Create a `PCG` solver. See HYPRE API reference for details and supported setting
 mutable struct PCG <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
+    precond::Union{HYPRESolver, Nothing}
     function PCG(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
         # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRPCGCreate
-        solver = new(comm, C_NULL)
+        solver = new(comm, C_NULL, nothing)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
         @check HYPRE_ParCSRPCGCreate(comm, solver_ref)
         solver.solver = solver_ref[]
@@ -482,6 +491,7 @@ Internals.setup_func(::PCG) = HYPRE_ParCSRPCGSetup
 Internals.solve_func(::PCG) = HYPRE_ParCSRPCGSolve
 
 function Internals.set_precond(pcg::PCG, p::HYPRESolver)
+    pcg.precond = p
     solve_f = Internals.solve_func(p)
     setup_f = Internals.setup_func(p)
     @check HYPRE_ParCSRPCGSetPrecond(pcg.solver, solve_f, setup_f, p.solver)
