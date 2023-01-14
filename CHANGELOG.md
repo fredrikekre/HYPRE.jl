@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+ - Solvers now keep an reference to the added preconditioner to make sure the preconditioner
+   is not finalized before the solver. This fixes crashes (segfaults) that could happen in
+   case no other reference to the preconditioner existed in the program. ([#12][github-12])
+ - The proper conversion methods for `ccall` are now defined for `HYPREMatrix`,
+   `HYPREVector`, and `HYPRESolver` such that they can be passed direcly to `HYPRE_*`
+   functions and let `ccall` guarantee the GC preservation of these objects. Although not
+   observed in practice, this fixes a possible race condition where the matrix/vector/solver
+   could be finalized too early. ([#13][github-13])
 
 ## [1.3.0] - 2022-12-30
 ### Added
@@ -45,6 +54,8 @@ Initial release of HYPRE.jl.
 [github-6]: https://github.com/fredrikekre/HYPRE.jl/pull/6
 [github-7]: https://github.com/fredrikekre/HYPRE.jl/pull/7
 [github-8]: https://github.com/fredrikekre/HYPRE.jl/pull/8
+[github-12]: https://github.com/fredrikekre/HYPRE.jl/pull/12
+[github-13]: https://github.com/fredrikekre/HYPRE.jl/pull/13
 
 [1.0.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.0.0
 [1.1.0]: https://github.com/fredrikekre/HYPRE.jl/compare/v1.0.0...v1.1.0
