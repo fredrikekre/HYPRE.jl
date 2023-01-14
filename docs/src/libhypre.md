@@ -15,15 +15,13 @@ directly.
 Functions from the `LibHYPRE` submodule can be used together with the high level interface.
 This is useful when you need some functionality from the library which isn't exposed in the
 high level interface. Many functions require passing a reference to a matrix/vector or a
-solver. These can be obtained as follows:
-
-| C type signature     | Argument to pass                     |
-|:---------------------|:-------------------------------------|
-| `HYPRE_IJMatrix`     | `A.ijmatrix`  where `A::HYPREMatrix` |
-| `HYPRE_ParCSRMatrix` | `A.parmatrix` where `A::HYPREMatrix` |
-| `HYPRE_IJVector`     | `b.ijvector`  where `b::HYPREVector` |
-| `HYPRE_ParVector`    | `b.parvector` where `b::HYPREVector` |
-| `HYPRE_Solver`       | `s.solver`    where `s::HYPRESolver` |
+solver. HYPRE.jl defines the appropriate conversion methods used by `ccall` such that
+ - `A::HYPREMatrix` can be passed to `HYPRE_*` functions with `HYPRE_IJMatrix` or
+   `HYPRE_ParCSRMatrix` in the signature
+ - `b::HYPREVector` can be passed to `HYPRE_*` functions with `HYPRE_IJVector` or
+   `HYPRE_ParVector` in the signature
+ - `s::HYPRESolver` can be passed to `HYPRE_*` functions with `HYPRE_Solver` in the
+   signature
 
 [^1]: Bindings are generated using
       [Clang.jl](https://github.com/JuliaInterop/Clang.jl), see

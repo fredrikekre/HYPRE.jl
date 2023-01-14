@@ -63,6 +63,12 @@ mutable struct HYPREMatrix # <: AbstractMatrix{HYPRE_Complex}
     parmatrix::HYPRE_ParCSRMatrix
 end
 
+# Defining unsafe_convert enables ccall to automatically convert A::HYPREMatrix to
+# HYPRE_IJMatrix and HYPRE_ParCSRMatrix while also making sure A won't be GC'd and
+# finalized.
+Base.unsafe_convert(::Type{HYPRE_IJMatrix}, A::HYPREMatrix) = A.ijmatrix
+Base.unsafe_convert(::Type{HYPRE_ParCSRMatrix}, A::HYPREMatrix) = A.parmatrix
+
 function HYPREMatrix(comm::MPI.Comm, ilower::Integer,        iupper::Integer,
                                      jlower::Integer=ilower, jupper::Integer=iupper)
     # Create the IJ matrix
@@ -73,15 +79,15 @@ function HYPREMatrix(comm::MPI.Comm, ilower::Integer,        iupper::Integer,
     # Attach a finalizer
     finalizer(A) do x
         if x.ijmatrix != C_NULL
-            HYPRE_IJMatrixDestroy(x.ijmatrix)
+            HYPRE_IJMatrixDestroy(x)
             x.ijmatrix = x.parmatrix = C_NULL
         end
     end
     push!(Internals.HYPRE_OBJECTS, A => nothing)
     # Set storage type
-    @check HYPRE_IJMatrixSetObjectType(A.ijmatrix, HYPRE_PARCSR)
+    @check HYPRE_IJMatrixSetObjectType(A, HYPRE_PARCSR)
     # Initialize to make ready for setting values
-    @check HYPRE_IJMatrixInitialize(A.ijmatrix)
+    @check HYPRE_IJMatrixInitialize(A)
     return A
 end
 
@@ -89,10 +95,10 @@ end
 # This should be called after setting all the values
 function Internals.assemble_matrix(A::HYPREMatrix)
     # Finalize after setting all values
-    @check HYPRE_IJMatrixAssemble(A.ijmatrix)
+    @check HYPRE_IJMatrixAssemble(A)
     # Fetch the assembled CSR matrix
     parmatrix_ref = Ref{Ptr{Cvoid}}(C_NULL)
-    @check HYPRE_IJMatrixGetObject(A.ijmatrix, parmatrix_ref)
+    @check HYPRE_IJMatrixGetObject(A, parmatrix_ref)
     A.parmatrix = convert(Ptr{HYPRE_ParCSRMatrix}, parmatrix_ref[])
     return A
 end
@@ -109,6 +115,11 @@ mutable struct HYPREVector # <: AbstractVector{HYPRE_Complex}
     parvector::HYPRE_ParVector
 end
 
+# Defining unsafe_convert enables ccall to automatically convert b::HYPREVector to
+# HYPRE_IJVector and HYPRE_ParVector while also making sure b won't be GC'd and finalized.
+Base.unsafe_convert(::Type{HYPRE_IJVector}, b::HYPREVector) = b.ijvector
+Base.unsafe_convert(::Type{HYPRE_ParVector}, b::HYPREVector) = b.parvector
+
 function HYPREVector(comm::MPI.Comm, ilower::Integer, iupper::Integer)
     # Create the IJ vector
     b = HYPREVector(comm, ilower, iupper, C_NULL, C_NULL)
@@ -118,24 +129,24 @@ function HYPREVector(comm::MPI.Comm, ilower::Integer, iupper::Integer)
     # Attach a finalizer
     finalizer(b) do x
         if x.ijvector != C_NULL
-            HYPRE_IJVectorDestroy(x.ijvector)
+            HYPRE_IJVectorDestroy(x)
             x.ijvector = x.parvector = C_NULL
         end
     end
     push!(Internals.HYPRE_OBJECTS, b => nothing)
     # Set storage type
-    @check HYPRE_IJVectorSetObjectType(b.ijvector, HYPRE_PARCSR)
+    @check HYPRE_IJVectorSetObjectType(b, HYPRE_PARCSR)
     # Initialize to make ready for setting values
-    @check HYPRE_IJVectorInitialize(b.ijvector)
+    @check HYPRE_IJVectorInitialize(b)
     return b
 end
 
 function Internals.assemble_vector(b::HYPREVector)
     # Finalize after setting all values
-    @check HYPRE_IJVectorAssemble(b.ijvector)
+    @check HYPRE_IJVectorAssemble(b)
     # Fetch the assembled vector
     parvector_ref = Ref{Ptr{Cvoid}}(C_NULL)
-    @check HYPRE_IJVectorGetObject(b.ijvector, parvector_ref)
+    @check HYPRE_IJVectorGetObject(b, parvector_ref)
     b.parvector = convert(Ptr{HYPRE_ParVector}, parvector_ref[])
     return b
 end
@@ -143,7 +154,7 @@ end
 function Internals.get_proc_rows(b::HYPREVector)
     # ilower_ref = Ref{HYPRE_BigInt}()
     # iupper_ref = Ref{HYPRE_BigInt}()
-    # @check HYPRE_IJVectorGetLocalRange(b.ijvector, ilower_ref, iupper_ref)
+    # @check HYPRE_IJVectorGetLocalRange(b, ilower_ref, iupper_ref)
     # ilower = ilower_ref[]
     # iupper = iupper_ref[]
     # return ilower, iupper
@@ -169,7 +180,7 @@ function Base.zero(b::HYPREVector)
     nvalues = jupper - jlower + 1
     indices = collect(HYPRE_BigInt, jlower:jupper)
     values = zeros(HYPRE_Complex, nvalues)
-    @check HYPRE_IJVectorSetValues(x.ijvector, nvalues, indices, values)
+    @check HYPRE_IJVectorSetValues(x, nvalues, indices, values)
     # Finalize and return
     Internals.assemble_vector(x)
     return x
@@ -258,7 +269,7 @@ end
 function HYPREMatrix(comm::MPI.Comm, B::Union{SparseMatrixCSC,SparseMatrixCSR}, ilower, iupper)
     A = HYPREMatrix(comm, ilower, iupper)
     nrows, ncols, rows, cols, values = Internals.to_hypre_data(B, ilower, iupper)
-    @check HYPRE_IJMatrixSetValues(A.ijmatrix, nrows, ncols, rows, cols, values)
+    @check HYPRE_IJMatrixSetValues(A, nrows, ncols, rows, cols, values)
     Internals.assemble_matrix(A)
     return A
 end
@@ -281,7 +292,7 @@ end
 function HYPREVector(comm::MPI.Comm, x::Vector, ilower, iupper)
     b = HYPREVector(comm, ilower, iupper)
     nvalues, indices, values = Internals.to_hypre_data(x, ilower, iupper)
-    @check HYPRE_IJVectorSetValues(b.ijvector, nvalues, indices, values)
+    @check HYPRE_IJVectorSetValues(b, nvalues, indices, values)
     Internals.assemble_vector(b)
     return b
 end
@@ -297,7 +308,7 @@ function Base.copy!(dst::Vector{HYPRE_Complex}, src::HYPREVector)
         throw(ArgumentError("length of dst and src does not match"))
     end
     indices = collect(HYPRE_BigInt, ilower:iupper)
-    @check HYPRE_IJVectorGetValues(src.ijvector, nvalues, indices, dst)
+    @check HYPRE_IJVectorGetValues(src, nvalues, indices, dst)
     return dst
 end
 
@@ -308,12 +319,12 @@ function Base.copy!(dst::HYPREVector, src::Vector{HYPRE_Complex})
         throw(ArgumentError("length of dst and src does not match"))
     end
     # Re-initialize the vector
-    @check HYPRE_IJVectorInitialize(dst.ijvector)
+    @check HYPRE_IJVectorInitialize(dst)
     # Set all the values
     indices = collect(HYPRE_BigInt, ilower:iupper)
-    @check HYPRE_IJVectorSetValues(dst.ijvector, nvalues, indices, src)
+    @check HYPRE_IJVectorSetValues(dst, nvalues, indices, src)
     # TODO: It shouldn't be necessary to assemble here since we only set owned rows (?)
-    # @check HYPRE_IJVectorAssemble(dst.ijvector)
+    # @check HYPRE_IJVectorAssemble(dst)
     # TODO: Necessary to recreate the ParVector? Running some examples it seems like it is
     # not needed.
     return dst
@@ -445,7 +456,7 @@ function HYPREMatrix(B::PSparseMatrix)
     # Set all the values
     map_parts(B.values, B.rows.partition, B.cols.partition) do Bv, Br, Bc
         nrows, ncols, rows, cols, values = Internals.to_hypre_data(Bv, Br, Bc)
-        @check HYPRE_IJMatrixSetValues(A.ijmatrix, nrows, ncols, rows, cols, values)
+        @check HYPRE_IJMatrixSetValues(A, nrows, ncols, rows, cols, values)
         return nothing
     end
     # Finalize
@@ -487,7 +498,7 @@ function HYPREVector(v::PVector)
         # end
         # nvalues = length(indices)
 
-        @check HYPRE_IJVectorSetValues(b.ijvector, nvalues, indices, values)
+        @check HYPRE_IJVectorSetValues(b, nvalues, indices, values)
         return nothing
     end
     # Finalize
@@ -521,7 +532,7 @@ function Base.copy!(dst::PVector{HYPRE_Complex}, src::HYPREVector)
         fill!(vv, 0)
 
         # TODO: Safe to use vv here? Owned values are always first?
-        @check HYPRE_IJVectorGetValues(src.ijvector, nvalues, indices, vv)
+        @check HYPRE_IJVectorGetValues(src, nvalues, indices, vv)
     end
     return dst
 end
@@ -529,17 +540,17 @@ end
 function Base.copy!(dst::HYPREVector, src::PVector{HYPRE_Complex})
     Internals.copy_check(dst, src)
     # Re-initialize the vector
-    @check HYPRE_IJVectorInitialize(dst.ijvector)
+    @check HYPRE_IJVectorInitialize(dst)
     map_parts(src.values, src.owned_values, src.rows.partition) do vv, _, vr
         ilower_src_part = vr.lid_to_gid[vr.oid_to_lid.start]
         iupper_src_part = vr.lid_to_gid[vr.oid_to_lid.stop]
         nvalues = HYPRE_Int(iupper_src_part - ilower_src_part + 1)
         indices = collect(HYPRE_BigInt, ilower_src_part:iupper_src_part)
         # TODO: Safe to use vv here? Owned values are always first?
-        @check HYPRE_IJVectorSetValues(dst.ijvector, nvalues, indices, vv)
+        @check HYPRE_IJVectorSetValues(dst, nvalues, indices, vv)
     end
     # TODO: It shouldn't be necessary to assemble here since we only set owned rows (?)
-    # @check HYPRE_IJVectorAssemble(dst.ijvector)
+    # @check HYPRE_IJVectorAssemble(dst)
     # TODO: Necessary to recreate the ParVector? Running some examples it seems like it is
     # not needed.
     return dst
@@ -585,9 +596,9 @@ start_assemble!
 function start_assemble!(A::HYPREMatrix)
     if A.parmatrix != C_NULL
         # This matrix have been assembled before, reset to 0
-        @check HYPRE_IJMatrixSetConstantValues(A.ijmatrix, 0)
+        @check HYPRE_IJMatrixSetConstantValues(A, 0)
     end
-    @check HYPRE_IJMatrixInitialize(A.ijmatrix)
+    @check HYPRE_IJMatrixInitialize(A)
     return HYPREMatrixAssembler(A, HYPRE_Int[], HYPRE_BigInt[], HYPRE_BigInt[], HYPRE_Complex[])
 end
 
@@ -595,14 +606,14 @@ function start_assemble!(b::HYPREVector)
     if b.parvector != C_NULL
         # This vector have been assembled before, reset to 0
         # See https://github.com/hypre-space/hypre/pull/689
-        # @check HYPRE_IJVectorSetConstantValues(b.ijvector, 0)
+        # @check HYPRE_IJVectorSetConstantValues(b, 0)
     end
-    @check HYPRE_IJVectorInitialize(b.ijvector)
+    @check HYPRE_IJVectorInitialize(b)
     if b.parvector != C_NULL
         nvalues = HYPRE_Int(b.iupper - b.ilower + 1)
         indices = collect(HYPRE_BigInt, b.ilower:b.iupper)
         values = zeros(HYPRE_Complex, nvalues)
-        @check HYPRE_IJVectorSetValues(b.ijvector, nvalues, indices, values)
+        @check HYPRE_IJVectorSetValues(b, nvalues, indices, values)
         # TODO: Do I need to assemble here?
     end
     return HYPREVectorAssembler(b, HYPRE_BigInt[], HYPRE_Complex[])
@@ -635,14 +646,14 @@ assemble!
 
 function assemble!(A::HYPREMatrixAssembler, i::Vector, j::Vector, a::Matrix)
     nrows, ncols, rows, cols, values = Internals.to_hypre_data(A, a, i, j)
-    @check HYPRE_IJMatrixAddToValues(A.A.ijmatrix, nrows, ncols, rows, cols, values)
+    @check HYPRE_IJMatrixAddToValues(A.A, nrows, ncols, rows, cols, values)
     return A
 end
 @deprecate assemble!(A::HYPREMatrixAssembler, ij::Vector, a::Matrix) assemble!(A, ij, ij, a) false
 
 function assemble!(A::HYPREVectorAssembler, ij::Vector, a::Vector)
     nvalues, indices, values = Internals.to_hypre_data(A, a, ij)
-    @check HYPRE_IJVectorAddToValues(A.b.ijvector, nvalues, indices, values)
+    @check HYPRE_IJVectorAddToValues(A.b, nvalues, indices, values)
     return A
 end
 
