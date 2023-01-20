@@ -381,6 +381,9 @@ end
     x_h = HYPRE.solve(bicg, A_h, b_h)
     copy!(x, x_h)
     @test x ≈ A \ b atol=tol
+    # Test solver queries
+    @test HYPRE.GetFinalRelativeResidualNorm(bicg) < tol
+    @test HYPRE.GetNumIterations(bicg) > 0
 
     # Solve with preconditioner
     precond = HYPRE.BoomerAMG(; MaxIter = 1, Tol = 0.0)
@@ -440,6 +443,9 @@ end
     x_h = HYPRE.solve(amg, A_h, b_h)
     copy!(x, x_h)
     @test x ≈ A \ b atol = tol * norm(b)
+    # Test solver queries
+    @test HYPRE.GetFinalRelativeResidualNorm(amg) < tol
+    @test HYPRE.GetNumIterations(amg) > 0
 end
 
 @testset "FlexGMRES" begin
@@ -466,6 +472,9 @@ end
     x_h = HYPRE.solve(gmres, A_h, b_h)
     copy!(x, x_h)
     @test x ≈ A \ b atol=tol
+    # Test solver queries
+    @test HYPRE.GetFinalRelativeResidualNorm(gmres) < tol
+    @test HYPRE.GetNumIterations(gmres) > 0
 
     # Solve with preconditioner
     precond = HYPRE.BoomerAMG()
@@ -506,6 +515,9 @@ end
     x_h = HYPRE.solve(gmres, A_h, b_h)
     copy!(x, x_h)
     @test x ≈ A \ b atol=tol
+    # Test solver queries
+    @test HYPRE.GetFinalRelativeResidualNorm(gmres) < tol
+    @test HYPRE.GetNumIterations(gmres) > 0
 
     # Solve with preconditioner
     precond = HYPRE.BoomerAMG(; MaxIter = 1, Tol = 0.0)
@@ -545,6 +557,9 @@ end
     x_h = HYPRE.solve(hybrid, A_h, b_h)
     copy!(x, x_h)
     @test x ≈ A \ b atol=tol
+    # Test solver queries
+    @test HYPRE.GetFinalRelativeResidualNorm(hybrid) < tol
+    @test HYPRE.GetNumIterations(hybrid) > 0
 
     # Solve with given preconditioner
     precond = HYPRE.BoomerAMG()
@@ -585,6 +600,9 @@ end
     x_h = HYPRE.solve(ilu, A_h, b_h)
     copy!(x, x_h)
     @test x ≈ A \ b atol=tol
+    # Test solver queries
+    @test HYPRE.GetFinalRelativeResidualNorm(ilu) < tol
+    @test HYPRE.GetNumIterations(ilu) > 0
 
     # Use as preconditioner to PCG
     precond = HYPRE.ILU()
@@ -623,6 +641,9 @@ end
     copy!(x, x_h)
     # Test result with direct solver
     @test x ≈ A \ b atol=tol
+    # Test solver queries (should error)
+    @test_throws ArgumentError("cannot get residual norm for HYPRE.ParaSails") HYPRE.GetFinalRelativeResidualNorm(parasails)
+    @test_throws ArgumentError("cannot get number of iterations for HYPRE.ParaSails") HYPRE.GetNumIterations(parasails)
 end
 
 @testset "(ParCSR)PCG" begin
@@ -650,6 +671,10 @@ end
     x_h = HYPRE.solve(pcg, A_h, b_h)
     copy!(x, x_h)
     @test x ≈ A \ b atol=tol
+    # Test solver queries
+    @test HYPRE.GetFinalRelativeResidualNorm(pcg) < tol
+    @test HYPRE.GetNumIterations(pcg) > 0
+
     # Solve with AMG preconditioner
     precond = HYPRE.BoomerAMG(; MaxIter = 1, Tol = 0.0)
     pcg = HYPRE.PCG(; Tol = tol, Precond = precond)

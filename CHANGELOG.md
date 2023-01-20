@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+ - New function `HYPRE.GetFinalRelativeResidualNorm(s::HYPRESolver)` for getting the final
+   residual norm from a solver. This function dispatches on the solver to the corresponding
+   C API wrapper `LibHYPRE.HYPRE_${Solver}GetFinalRelativeResidualNorm`. ([#14][github-14])
+ - New function `HYPRE.GetNumIterations(s::HYPRESolver)` for getting the number of
+   iterations from a solver. This function dispatches on the solver to the corresponding C
+   API wrapper `LibHYPRE.HYPRE_${Solver}GetNumIterations`. ([#14][github-14])
 
 ## [1.3.1] - 2023-01-14
 ### Fixed
@@ -58,6 +65,7 @@ Initial release of HYPRE.jl.
 [github-8]: https://github.com/fredrikekre/HYPRE.jl/pull/8
 [github-12]: https://github.com/fredrikekre/HYPRE.jl/pull/12
 [github-13]: https://github.com/fredrikekre/HYPRE.jl/pull/13
+[github-14]: https://github.com/fredrikekre/HYPRE.jl/pull/14
 
 [1.0.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.0.0
 [1.1.0]: https://github.com/fredrikekre/HYPRE.jl/compare/v1.0.0...v1.1.0
