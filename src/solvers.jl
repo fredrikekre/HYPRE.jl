@@ -501,3 +501,68 @@ function Internals.set_precond(pcg::PCG, p::HYPRESolver)
     @check HYPRE_ParCSRPCGSetPrecond(pcg, solve_f, setup_f, p)
     return nothing
 end
+
+
+##########################################################
+# Extracting information about the solution from solvers #
+##########################################################
+
+"""
+    HYPRE.GetFinalRelativeResidualNorm(s::HYPRESolver)
+
+Return the final relative residual norm from the last solve with solver `s`.
+
+This function dispatches on the solver to the corresponding C API wrapper
+`LibHYPRE.HYPRE_\$(Solver)GetFinalRelativeResidualNorm`.
+"""
+function GetFinalRelativeResidualNorm(s::HYPRESolver)
+    r = Ref{HYPRE_Real}()
+    if s isa BiCGSTAB
+        @check HYPRE_ParCSRBiCGSTABGetFinalRelativeResidualNorm(s, r)
+    elseif s isa BoomerAMG
+        @check HYPRE_BoomerAMGGetFinalRelativeResidualNorm(s, r)
+    elseif s isa FlexGMRES
+        @check HYPRE_ParCSRFlexGMRESGetFinalRelativeResidualNorm(s, r)
+    elseif s isa GMRES
+        @check HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm(s, r)
+    elseif s isa Hybrid
+        @check HYPRE_ParCSRHybridGetFinalRelativeResidualNorm(s, r)
+    elseif s isa ILU
+        @check HYPRE_ILUGetFinalRelativeResidualNorm(s, r)
+    elseif s isa PCG
+        @check HYPRE_ParCSRPCGGetFinalRelativeResidualNorm(s, r)
+    else
+        throw(ArgumentError("cannot get residual norm for $(typeof(s))"))
+    end
+    return r[]
+end
+
+"""
+    HYPRE.GetNumIterations(s::HYPRESolver)
+
+Return number of iterations during the last solve with solver `s`.
+
+This function dispatches on the solver to the corresponding C API wrapper
+`LibHYPRE.HYPRE_\$(Solver)GetNumIterations`.
+"""
+function GetNumIterations(s::HYPRESolver)
+    r = Ref{HYPRE_Int}()
+    if s isa BiCGSTAB
+        @check HYPRE_ParCSRBiCGSTABGetNumIterations(s, r)
+    elseif s isa BoomerAMG
+        @check HYPRE_BoomerAMGGetNumIterations(s, r)
+    elseif s isa FlexGMRES
+        @check HYPRE_ParCSRFlexGMRESGetNumIterations(s, r)
+    elseif s isa GMRES
+        @check HYPRE_ParCSRGMRESGetNumIterations(s, r)
+    elseif s isa Hybrid
+        @check HYPRE_ParCSRHybridGetNumIterations(s, r)
+    elseif s isa ILU
+        @check HYPRE_ILUGetNumIterations(s, r)
+    elseif s isa PCG
+        @check HYPRE_ParCSRPCGGetNumIterations(s, r)
+    else
+        throw(ArgumentError("cannot get number of iterations for $(typeof(s))"))
+    end
+    return r[]
+end
