@@ -539,7 +539,7 @@ function Internals.copy_check(dst::HYPREVector, src::PVector)
     if il_dst != il_src && iu_dst != iu_src
         # TODO: Why require this?
         throw(ArgumentError(
-            "row owner mismatch between dst ($(il_dst:iu_dst)) and src ($(il_dst:iu_dst))"
+            "row owner mismatch between dst ($(il_dst:iu_dst)) and src ($(il_src:iu_src))"
         ))
     end
 end
