@@ -3,8 +3,10 @@
 module HYPRE
 
 using MPI: MPI
-using PartitionedArrays: IndexRange, MPIData, PSparseMatrix, PVector, PartitionedArrays,
-    SequentialData, map_parts
+using PartitionedArrays: own_length, tuple_of_arrays, own_to_global, global_length,
+                         own_to_local, local_to_global, global_to_own, global_to_local,
+                         MPIArray, PSparseMatrix, PVector, PartitionedArrays, AbstractLocalIndices,
+                         local_values, own_values, partition
 using SparseArrays: SparseArrays, SparseMatrixCSC, nnz, nonzeros, nzrange, rowvals
 using SparseMatricesCSR: SparseMatrixCSR, colvals, getrowptr
 
@@ -334,12 +336,24 @@ end
 # PartitionedArrays.PSparseMatrix -> HYPREMatrix #
 ##################################################
 
-# TODO: This has some duplicated code with to_hypre_data(::SparseMatrixCSC, ilower, iupper)
-function Internals.to_hypre_data(A::SparseMatrixCSC, r::IndexRange, c::IndexRange)
-    @assert r.oid_to_lid isa UnitRange && r.oid_to_lid.start == 1
+function subarray_unsafe_supported()
+    # Wrapping of SubArrays as raw pointers may or may not be supported
+    # depending on the Julia version. If this is not supported, we have to fall
+    # back to allocation of an intermediate buffer. This logic can be removed if
+    # HYPRE.jl drops support for Julia < 1.9.
+    return VERSION >= v"1.9.0"
+end
 
-    ilower = r.lid_to_gid[r.oid_to_lid.start]
-    iupper = r.lid_to_gid[r.oid_to_lid.stop]
+# TODO: This has some duplicated code with to_hypre_data(::SparseMatrixCSC, ilower, iupper)
+function Internals.to_hypre_data(A::SparseMatrixCSC, r::AbstractLocalIndices, c::AbstractLocalIndices)
+    g_to_l_rows = global_to_local(r) # Not sure about this assert
+    l_to_g_rows = local_to_global(r)
+    @assert g_to_l_rows.own_to_local isa UnitRange && g_to_l_rows.own_to_local.start == 1
+
+    n_local_rows = own_length(r)
+    n_local_cols = own_length(c)
+    ilower = l_to_g_rows[1]
+    iupper = l_to_g_rows[own_length(r)]
     a_rows = rowvals(A)
     a_vals = nonzeros(A)
 
@@ -357,7 +371,7 @@ function Internals.to_hypre_data(A::SparseMatrixCSC, r::IndexRange, c::IndexRang
     @inbounds for j in 1:size(A, 2)
         for i in nzrange(A, j)
             row = a_rows[i]
-            row > r.oid_to_lid.stop && continue # Skip ghost rows
+            row > n_local_rows && continue # Skip ghost rows
             # grow = r.lid_to_gid[lrow]
             ncols[row] += 1
         end
@@ -374,13 +388,14 @@ function Internals.to_hypre_data(A::SparseMatrixCSC, r::IndexRange, c::IndexRang
 
     # Second pass to populate the output -- here we need to take care of the permutation
     # of columns. TODO: Problem that they are not sorted?
+    l_to_g_cols = local_to_global(c)
     @inbounds for j in 1:size(A, 2)
         for i in nzrange(A, j)
             row = a_rows[i]
-            row > r.oid_to_lid.stop && continue # Skip ghost rows
+            row > n_local_cols && continue # Skip ghost rows
             k = lastinds[row] += 1
             val = a_vals[i]
-            cols[k] = c.lid_to_gid[j]
+            cols[k] = l_to_g_cols[j]
             values[k] = val
         end
     end
@@ -391,32 +406,37 @@ end
 # TODO: Possibly this can be optimized if it is possible to pass overlong vectors to HYPRE.
 #       At least values should be possible to directly share, but cols needs to translated
 #       to global ids.
-function Internals.to_hypre_data(A::SparseMatrixCSR, r::IndexRange, c::IndexRange)
-    @assert r.oid_to_lid isa UnitRange && r.oid_to_lid.start == 1
+function Internals.to_hypre_data(A::SparseMatrixCSR, r::AbstractLocalIndices, c::AbstractLocalIndices)
+    g_to_l_rows = global_to_local(r)
+    l_to_g_rows = local_to_global(r)
+    @assert g_to_l_rows.own_to_local isa UnitRange && g_to_l_rows.own_to_local.start == 1
 
-    ilower = r.lid_to_gid[r.oid_to_lid.start]
-    iupper = r.lid_to_gid[r.oid_to_lid.stop]
+    n_local_rows = own_length(r)
+    ilower = l_to_g_rows[1]
+    iupper = l_to_g_rows[n_local_rows]
+
     a_cols = colvals(A)
     a_vals = nonzeros(A)
-    nnz = getrowptr(A)[r.oid_to_lid.stop + 1] - 1
+    nnz = getrowptr(A)[n_local_rows + 1] - 1
 
     # Initialize the data buffers HYPRE wants
     nrows = HYPRE_Int(iupper - ilower + 1)      # Total number of rows
-    ncols = zeros(HYPRE_Int, nrows)             # Number of colums for each row
+    ncols = zeros(HYPRE_Int, nrows)             # Number of columns for each row
     rows = collect(HYPRE_BigInt, ilower:iupper) # The row indices
     cols = Vector{HYPRE_BigInt}(undef, nnz)     # The column indices
     values = Vector{HYPRE_Complex}(undef, nnz)  # The values
 
     # Loop over the (owned) rows and collect all values
+    l_to_g_cols = local_to_global(c)
     k = 0
-    @inbounds for i in r.oid_to_lid
+    @inbounds for i in own_to_local(r)
         nzr = nzrange(A, i)
         ncols[i] = length(nzr)
         for j in nzr
             k += 1
             col = a_cols[j]
             val = a_vals[j]
-            cols[k] = c.lid_to_gid[col]
+            cols[k] = l_to_g_cols[col]
             values[k] = val
         end
     end
@@ -425,23 +445,29 @@ function Internals.to_hypre_data(A::SparseMatrixCSR, r::IndexRange, c::IndexRang
     return nrows, ncols, rows, cols, values
 end
 
-function Internals.get_comm(A::Union{PSparseMatrix{<:Any,<:M}, PVector{<:Any,<:M}}) where M <: MPIData
-    return A.rows.partition.comm
+function Internals.get_comm(A::Union{PSparseMatrix{<:Any,<:M}, PVector{<:Any,<:M}}) where M <: MPIArray
+    return partition(A).comm
 end
+
 Internals.get_comm(_::Union{PSparseMatrix,PVector}) = MPI.COMM_SELF
 
-function Internals.get_proc_rows(A::Union{PSparseMatrix{<:Any,<:M}, PVector{<:Any,<:M}}) where M <: MPIData
-    r = A.rows.partition.part
-    ilower::HYPRE_BigInt = r.lid_to_gid[r.oid_to_lid[1]]
-    iupper::HYPRE_BigInt = r.lid_to_gid[r.oid_to_lid[end]]
-    return ilower, iupper
-end
-function Internals.get_proc_rows(A::Union{PSparseMatrix{<:Any,<:S}, PVector{<:Any,<:S}}) where S <: SequentialData
+function Internals.get_proc_rows(A::Union{PSparseMatrix, PVector})
+    if A isa PVector
+        r = A.index_partition
+    else
+        r = A.row_partition
+    end
     ilower::HYPRE_BigInt = typemax(HYPRE_BigInt)
     iupper::HYPRE_BigInt = typemin(HYPRE_BigInt)
-    for r in A.rows.partition.parts
-        ilower = min(r.lid_to_gid[r.oid_to_lid[1]], ilower)
-        iupper = max(r.lid_to_gid[r.oid_to_lid[end]], iupper)
+    map(r) do a
+        # This is a map over the local process' owned indices. For MPI it will
+        # be a single value but for DebugArray / Array it will have multiple
+        # values.
+        o_to_g = own_to_global(a)
+        ilower_part = o_to_g[1]
+        iupper_part = o_to_g[end]
+        ilower = min(ilower, convert(HYPRE_BigInt, ilower_part))
+        iupper = max(iupper, convert(HYPRE_BigInt, iupper_part))
     end
     return ilower, iupper
 end
@@ -454,7 +480,7 @@ function HYPREMatrix(B::PSparseMatrix)
     # Create the IJ matrix
     A = HYPREMatrix(comm, ilower, iupper)
     # Set all the values
-    map_parts(B.values, B.rows.partition, B.cols.partition) do Bv, Br, Bc
+    map(local_values(B), B.row_partition, B.col_partition) do Bv, Br, Bc
         nrows, ncols, rows, cols, values = Internals.to_hypre_data(Bv, Br, Bc)
         @check HYPRE_IJMatrixSetValues(A, nrows, ncols, rows, cols, values)
         return nothing
@@ -476,9 +502,11 @@ function HYPREVector(v::PVector)
     # Create the IJ vector
     b = HYPREVector(comm, ilower, iupper)
     # Set all the values
-    map_parts(v.values, v.owned_values, v.rows.partition) do _, vo, vr
-        ilower_part = vr.lid_to_gid[vr.oid_to_lid.start]
-        iupper_part = vr.lid_to_gid[vr.oid_to_lid.stop]
+    map(own_values(v), v.index_partition) do vo, vr
+        o_to_g = own_to_global(vr)
+
+        ilower_part = o_to_g[1]
+        iupper_part = o_to_g[end]
 
         # Option 1: Set all values
         nvalues = HYPRE_Int(iupper_part - ilower_part + 1)
@@ -512,42 +540,49 @@ function Internals.copy_check(dst::HYPREVector, src::PVector)
     if il_dst != il_src && iu_dst != iu_src
         # TODO: Why require this?
         throw(ArgumentError(
-            "row owner mismatch between dst ($(il_dst:iu_dst)) and src ($(il_dst:iu_dst))"
+            "row owner mismatch between dst ($(il_dst:iu_dst)) and src ($(il_src:iu_src))"
         ))
     end
 end
 
 # TODO: Other eltypes could be support by using a intermediate buffer
-function Base.copy!(dst::PVector{HYPRE_Complex}, src::HYPREVector)
+function Base.copy!(dst::PVector{<:AbstractVector{HYPRE_Complex}}, src::HYPREVector)
     Internals.copy_check(src, dst)
-    map_parts(dst.values, dst.owned_values, dst.rows.partition) do vv, _, vr
-        il_src_part = vr.lid_to_gid[vr.oid_to_lid.start]
-        iu_src_part = vr.lid_to_gid[vr.oid_to_lid.stop]
+    map(own_values(dst), dst.index_partition) do ov, vr
+        o_to_g = own_to_global(vr)
+        il_src_part = o_to_g[1]
+        iu_src_part = o_to_g[end]
         nvalues = HYPRE_Int(iu_src_part - il_src_part + 1)
         indices = collect(HYPRE_BigInt, il_src_part:iu_src_part)
-
-        # Assumption: the dst vector is assembled, and should thus have 0s on the ghost
-        # entries (??). If this is not true, we must call fill!(vv, 0) here. This should be
-        # fairly cheap anyway, so might as well do it...
-        fill!(vv, 0)
-
-        # TODO: Safe to use vv here? Owned values are always first?
-        @check HYPRE_IJVectorGetValues(src, nvalues, indices, vv)
+        if subarray_unsafe_supported()
+            values = ov
+        else
+            values = collect(HYPRE_Complex, ov)
+        end
+        @check HYPRE_IJVectorGetValues(src, nvalues, indices, values)
+        if !subarray_unsafe_supported()
+            @. ov = values
+        end
     end
     return dst
 end
 
-function Base.copy!(dst::HYPREVector, src::PVector{HYPRE_Complex})
+function Base.copy!(dst::HYPREVector, src::PVector{<:AbstractVector{HYPRE_Complex}})
     Internals.copy_check(dst, src)
     # Re-initialize the vector
     @check HYPRE_IJVectorInitialize(dst)
-    map_parts(src.values, src.owned_values, src.rows.partition) do vv, _, vr
-        ilower_src_part = vr.lid_to_gid[vr.oid_to_lid.start]
-        iupper_src_part = vr.lid_to_gid[vr.oid_to_lid.stop]
+    map(own_values(src), src.index_partition) do ov, vr
+        o_to_g = own_to_global(vr)
+        ilower_src_part = o_to_g[1]
+        iupper_src_part = o_to_g[end]
         nvalues = HYPRE_Int(iupper_src_part - ilower_src_part + 1)
         indices = collect(HYPRE_BigInt, ilower_src_part:iupper_src_part)
-        # TODO: Safe to use vv here? Owned values are always first?
-        @check HYPRE_IJVectorSetValues(dst, nvalues, indices, vv)
+        if subarray_unsafe_supported()
+            values = ov
+        else
+            values = collect(HYPRE_Complex, ov)
+        end
+        @check HYPRE_IJVectorSetValues(dst, nvalues, indices, values)
     end
     # TODO: It shouldn't be necessary to assemble here since we only set owned rows (?)
     # @check HYPRE_IJVectorAssemble(dst)
