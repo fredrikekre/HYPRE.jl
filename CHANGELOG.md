@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ## [Unreleased] -->
 
+## [1.5.0] - 2023-05-26
+ - PartitionedArrays.jl dependency upgraded from version 0.2.x to version 0.3.x.
+   ([#16][github-16])
+
 ## [1.4.0] - 2023-01-20
 ### Added
  - New function `HYPRE.GetFinalRelativeResidualNorm(s::HYPRESolver)` for getting the final
@@ -68,6 +72,7 @@ Initial release of HYPRE.jl.
 [github-12]: https://github.com/fredrikekre/HYPRE.jl/pull/12
 [github-13]: https://github.com/fredrikekre/HYPRE.jl/pull/13
 [github-14]: https://github.com/fredrikekre/HYPRE.jl/pull/14
+[github-16]: https://github.com/fredrikekre/HYPRE.jl/pull/16
 
 [1.0.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.0.0
 [1.1.0]: https://github.com/fredrikekre/HYPRE.jl/compare/v1.0.0...v1.1.0
@@ -75,4 +80,5 @@ Initial release of HYPRE.jl.
 [1.3.0]: https://github.com/fredrikekre/HYPRE.jl/compare/v1.2.0...v1.3.0
 [1.3.1]: https://github.com/fredrikekre/HYPRE.jl/compare/v1.3.0...v1.3.1
 [1.4.0]: https://github.com/fredrikekre/HYPRE.jl/compare/v1.3.1...v1.4.0
+[1.5.0]: https://github.com/fredrikekre/HYPRE.jl/compare/v1.4.0...v1.5.0
 <!-- [Unreleased]: https://github.com/fredrikekre/HYPRE.jl/compare/v1.3.1...HEAD -->
