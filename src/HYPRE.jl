@@ -341,7 +341,7 @@ function subarray_unsafe_supported()
     # depending on the Julia version. If this is not supported, we have to fall
     # back to allocation of an intermediate buffer. This logic can be removed if
     # HYPRE.jl drops support for Julia < 1.9.
-    return @static Int(VERSION.minor) > 8 || Int(VERSION.major) > 1
+    return VERSION >= v"1.9.0"
 end
 
 # TODO: This has some duplicated code with to_hypre_data(::SparseMatrixCSC, ilower, iupper)
@@ -546,7 +546,7 @@ function Internals.copy_check(dst::HYPREVector, src::PVector)
 end
 
 # TODO: Other eltypes could be support by using a intermediate buffer
-function Base.copy!(dst::PVector, src::HYPREVector)
+function Base.copy!(dst::PVector{<:AbstractVector{HYPRE_Complex}}, src::HYPREVector)
     Internals.copy_check(src, dst)
     map(own_values(dst), dst.index_partition) do ov, vr
         o_to_g = own_to_global(vr)
@@ -567,7 +567,7 @@ function Base.copy!(dst::PVector, src::HYPREVector)
     return dst
 end
 
-function Base.copy!(dst::HYPREVector, src::PVector)
+function Base.copy!(dst::HYPREVector, src::PVector{<:AbstractVector{HYPRE_Complex}})
     Internals.copy_check(dst, src)
     # Re-initialize the vector
     @check HYPRE_IJVectorInitialize(dst)
