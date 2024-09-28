@@ -6,8 +6,8 @@ using MPI: MPI
 using PartitionedArrays: PartitionedArrays, AbstractLocalIndices, MPIArray, PSparseMatrix,
     PVector, SplitMatrix, ghost_to_global, local_values, own_to_global, own_values,
     partition
-using SparseArrays: SparseArrays, SparseMatrixCSC, nnz, nonzeros, nzrange, rowvals
-using SparseMatricesCSR: SparseMatrixCSR, colvals, getrowptr
+using SparseArrays: SparseArrays, SparseMatrixCSC, nonzeros, nzrange, rowvals
+using SparseMatricesCSR: SparseMatrixCSR, colvals
 
 export HYPREMatrix, HYPREVector
 

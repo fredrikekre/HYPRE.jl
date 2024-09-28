@@ -1,7 +1,7 @@
-using HYPRE_jll
+using HYPRE_jll: HYPRE_jll, libHYPRE
 export HYPRE_jll
 
-using CEnum
+using CEnum: @cenum
 
 using MPI: MPI, MPI_Comm
 if isdefined(MPI, :API) # MPI >= 0.20.0
@@ -3744,4 +3744,3 @@ const HYPRE_ERROR_MEMORY = 2
 const HYPRE_ERROR_ARG = 4
 
 const HYPRE_ERROR_CONV = 256
-
