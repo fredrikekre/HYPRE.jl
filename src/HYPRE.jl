@@ -3,10 +3,9 @@
 module HYPRE
 
 using MPI: MPI
-using PartitionedArrays: own_length, tuple_of_arrays, own_to_global, global_length,
-                         own_to_local, local_to_global, global_to_own, global_to_local,
-                         MPIArray, PSparseMatrix, PVector, PartitionedArrays, AbstractLocalIndices,
-                         local_values, own_values, partition
+using PartitionedArrays: PartitionedArrays, AbstractLocalIndices, MPIArray, PSparseMatrix,
+    PVector, SplitMatrix, ghost_to_global, local_values, own_to_global, own_values,
+    partition
 using SparseArrays: SparseArrays, SparseMatrixCSC, nnz, nonzeros, nzrange, rowvals
 using SparseMatricesCSR: SparseMatrixCSR, colvals, getrowptr
 
@@ -344,36 +343,48 @@ function subarray_unsafe_supported()
     return VERSION >= v"1.9.0"
 end
 
-# TODO: This has some duplicated code with to_hypre_data(::SparseMatrixCSC, ilower, iupper)
-function Internals.to_hypre_data(A::SparseMatrixCSC, r::AbstractLocalIndices, c::AbstractLocalIndices)
-    g_to_l_rows = global_to_local(r) # Not sure about this assert
-    l_to_g_rows = local_to_global(r)
-    @assert g_to_l_rows.own_to_local isa UnitRange && g_to_l_rows.own_to_local.start == 1
+function Internals.to_hypre_data(
+        A::SplitMatrix{<:SparseMatrixCSC}, r::AbstractLocalIndices, c::AbstractLocalIndices
+    )
+    # Own/ghost to global index mappings
+    own_to_global_row = own_to_global(r)
+    own_to_global_col = own_to_global(c)
+    ghost_to_global_col = ghost_to_global(c)
 
-    n_local_rows = own_length(r)
-    n_local_cols = own_length(c)
-    ilower = l_to_g_rows[1]
-    iupper = l_to_g_rows[own_length(r)]
-    a_rows = rowvals(A)
-    a_vals = nonzeros(A)
+    # HYPRE requires contiguous row indices
+    ilower = own_to_global_row[1]
+    iupper = own_to_global_row[end]
+    @assert iupper - ilower + 1 == length(own_to_global_row)
+
+    # Extract sparse matrices from the SplitMatrix. We are only interested in the owned
+    # rows, so only consider own-own and own-ghost blocks.
+    Aoo = A.blocks.own_own::SparseMatrixCSC
+    Aoo_rows = rowvals(Aoo)
+    Aoo_vals = nonzeros(Aoo)
+    Aog = A.blocks.own_ghost::SparseMatrixCSC
+    Aog_rows = rowvals(Aog)
+    Aog_vals = nonzeros(Aog)
+    @assert size(Aoo, 1) == size(Aog, 1) == length(own_to_global_row)
 
     # Initialize the data buffers HYPRE wants
-    nrows = HYPRE_Int(iupper - ilower + 1)      # Total number of rows
-    ncols = zeros(HYPRE_Int, nrows)             # Number of colums for each row
-    rows = collect(HYPRE_BigInt, ilower:iupper) # The row indices
+    nrows = HYPRE_Int(length(own_to_global_row)) # Total number of rows
+    ncols = zeros(HYPRE_Int, nrows)              # Number of colums for each row
+    rows = collect(HYPRE_BigInt, ilower:iupper)  # The row indices
     # cols = Vector{HYPRE_BigInt}(undef, nnz)     # The column indices
     # values = Vector{HYPRE_Complex}(undef, nnz)  # The values
 
-    # First pass to count nnz per row (note that the fact that columns are permuted
-    # doesn't matter for this pass)
-    a_rows = rowvals(A)
-    a_vals = nonzeros(A)
-    @inbounds for j in 1:size(A, 2)
-        for i in nzrange(A, j)
-            row = a_rows[i]
-            row > n_local_rows && continue # Skip ghost rows
-            # grow = r.lid_to_gid[lrow]
-            ncols[row] += 1
+    # First pass to count nnz per row (note that global column indices and column
+    # permutation doesn't matter for this pass)
+    @inbounds for own_col in 1:size(Aoo, 2)
+        for k in nzrange(Aoo, own_col)
+            own_row = Aoo_rows[k]
+            ncols[own_row] += 1
+        end
+    end
+    @inbounds for ghost_col in 1:size(Aog, 2)
+        for k in nzrange(Aog, ghost_col)
+            own_row = Aog_rows[k]
+            ncols[own_row] += 1
         end
     end
 
@@ -386,61 +397,83 @@ function Internals.to_hypre_data(A::SparseMatrixCSC, r::AbstractLocalIndices, c:
     lastinds = zeros(Int, nrows)
     cumsum!((@view lastinds[2:end]), (@view ncols[1:end-1]))
 
-    # Second pass to populate the output -- here we need to take care of the permutation
-    # of columns. TODO: Problem that they are not sorted?
-    l_to_g_cols = local_to_global(c)
-    @inbounds for j in 1:size(A, 2)
-        for i in nzrange(A, j)
-            row = a_rows[i]
-            row > n_local_cols && continue # Skip ghost rows
-            k = lastinds[row] += 1
-            val = a_vals[i]
-            cols[k] = l_to_g_cols[j]
-            values[k] = val
+    # Second pass to populate the output. Here we need to map column
+    # indices from own/ghost to global
+    @inbounds for own_col in 1:size(Aoo, 2)
+        for k in nzrange(Aoo, own_col)
+            own_row = Aoo_rows[k]
+            i = lastinds[own_row] += 1
+            values[i] = Aoo_vals[k]
+            cols[i] = own_to_global_col[own_col]
         end
     end
+    @inbounds for ghost_col in 1:size(Aog, 2)
+        for k in nzrange(Aog, ghost_col)
+            own_row = Aog_rows[k]
+            i = lastinds[own_row] += 1
+            values[i] = Aog_vals[k]
+            cols[i] = ghost_to_global_col[ghost_col]
+        end
+    end
+
+    # Sanity checks and return
     @assert nrows == length(ncols) == length(rows)
     return nrows, ncols, rows, cols, values
 end
 
-# TODO: Possibly this can be optimized if it is possible to pass overlong vectors to HYPRE.
-#       At least values should be possible to directly share, but cols needs to translated
-#       to global ids.
-function Internals.to_hypre_data(A::SparseMatrixCSR, r::AbstractLocalIndices, c::AbstractLocalIndices)
-    g_to_l_rows = global_to_local(r)
-    l_to_g_rows = local_to_global(r)
-    @assert g_to_l_rows.own_to_local isa UnitRange && g_to_l_rows.own_to_local.start == 1
+function Internals.to_hypre_data(
+        A::SplitMatrix{<:SparseMatrixCSR}, r::AbstractLocalIndices, c::AbstractLocalIndices
+    )
+    # Own/ghost to global index mappings
+    own_to_global_row = own_to_global(r)
+    own_to_global_col = own_to_global(c)
+    ghost_to_global_col = ghost_to_global(c)
 
-    n_local_rows = own_length(r)
-    ilower = l_to_g_rows[1]
-    iupper = l_to_g_rows[n_local_rows]
+    # HYPRE requires contiguous row indices
+    ilower = own_to_global_row[1]
+    iupper = own_to_global_row[end]
+    @assert iupper - ilower + 1 == length(own_to_global_row)
 
-    a_cols = colvals(A)
-    a_vals = nonzeros(A)
-    nnz = getrowptr(A)[n_local_rows + 1] - 1
+    # Extract sparse matrices from the SplitMatrix. We are only interested in the owned
+    # rows, so only consider own-own and own-ghost blocks.
+    Aoo = A.blocks.own_own::SparseMatrixCSR
+    Aoo_cols = colvals(Aoo)
+    Aoo_vals = nonzeros(Aoo)
+    Aog = A.blocks.own_ghost::SparseMatrixCSR
+    Aog_cols = colvals(Aog)
+    Aog_vals = nonzeros(Aog)
+    @assert size(Aoo, 1) == size(Aog, 1) == length(own_to_global_row)
 
     # Initialize the data buffers HYPRE wants
+    nnz = SparseArrays.nnz(Aoo) + SparseArrays.nnz(Aog)
     nrows = HYPRE_Int(iupper - ilower + 1)      # Total number of rows
     ncols = zeros(HYPRE_Int, nrows)             # Number of columns for each row
     rows = collect(HYPRE_BigInt, ilower:iupper) # The row indices
     cols = Vector{HYPRE_BigInt}(undef, nnz)     # The column indices
     values = Vector{HYPRE_Complex}(undef, nnz)  # The values
 
-    # Loop over the (owned) rows and collect all values
-    l_to_g_cols = local_to_global(c)
-    k = 0
-    @inbounds for i in own_to_local(r)
-        nzr = nzrange(A, i)
-        ncols[i] = length(nzr)
-        for j in nzr
-            k += 1
-            col = a_cols[j]
-            val = a_vals[j]
-            cols[k] = l_to_g_cols[col]
-            values[k] = val
+    # For CSR we only need a single pass to over the owned rows to collect everything
+    i = 0
+    for own_row in 1:size(Aoo, 1)
+        nzro = nzrange(Aoo, own_row)
+        nzrg = nzrange(Aog, own_row)
+        ncols[own_row] = length(nzro) + length(nzrg)
+        for k in nzro
+            i += 1
+            own_col = Aoo_cols[k]
+            cols[i] = own_to_global_col[own_col]
+            values[i] = Aoo_vals[k]
+        end
+        for k in nzrg
+            i += 1
+            ghost_col = Aog_cols[k]
+            cols[i] = ghost_to_global_col[ghost_col]
+            values[i] = Aog_vals[k]
         end
     end
-    @assert nnz == k
+
+    # Sanity checks and return
+    @assert nnz == i
     @assert nrows == length(ncols) == length(rows)
     return nrows, ncols, rows, cols, values
 end

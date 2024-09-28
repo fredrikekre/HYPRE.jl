@@ -32,3 +32,8 @@ HYPRE.ILU
 HYPRE.PCG
 HYPRE.ParaSails
 ```
+
+```@docs
+HYPRE.GetNumIterations
+HYPRE.GetFinalRelativeResidualNorm
+```
