@@ -51,24 +51,6 @@ See also [`solve`](@ref).
 solve!(pcg::HYPRESolver, x::HYPREVector, A::HYPREMatrix, ::HYPREVector)
 
 
-######################################
-# PartitionedArrays solver interface #
-######################################
-
-# TODO: Would it be useful with a method that copied the solution to b instead?
-
-function solve(solver::HYPRESolver, A::PSparseMatrix, b::PVector)
-    hypre_x = solve(solver, HYPREMatrix(A), HYPREVector(b))
-    x = copy!(similar(b, HYPRE_Complex), hypre_x)
-    return x
-end
-function solve!(solver::HYPRESolver, x::PVector, A::PSparseMatrix, b::PVector)
-    hypre_x = HYPREVector(x)
-    solve!(solver, hypre_x, HYPREMatrix(A), HYPREVector(b))
-    copy!(x, hypre_x)
-    return x
-end
-
 ########################################
 # SparseMatrixCS(C|R) solver interface #
 ########################################
