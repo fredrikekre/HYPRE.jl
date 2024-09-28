@@ -91,13 +91,6 @@ end
     @test H.iupper == H.jupper == 10
 end
 
-function default_local_values_csr(I,J,V,row_indices,col_indices)
-    # Adapted from p_sparse_matrix.jl line 487
-    m = local_length(row_indices)
-    n = local_length(col_indices)
-    sparsecsr(I,J,V,m,n)
-end
-
 function distribute_as_parray(parts, backend)
     if backend == :debug
         parts = DebugArray(parts)
@@ -151,8 +144,8 @@ end
                 parts = 1:2
             end
             parts = distribute_as_parray(parts, backend)
-            CSC = psparse!(diag_data(parts)...) |> fetch
-            CSR = psparse!(default_local_values_csr, diag_data(parts)...) |> fetch
+            CSC = psparse(diag_data(parts)...) |> fetch
+            CSR = psparse(sparsecsr, diag_data(parts)...) |> fetch
 
             for A in [CSC, CSR]
                 map(local_values(A), A.row_partition, A.col_partition, parts) do values, rows, cols, p
@@ -182,7 +175,7 @@ end
                     @test hypre_data[2]::Vector{HYPRE_Int} == ncols
                     @test hypre_data[3]::Vector{HYPRE_BigInt} == rows
                     @test hypre_data[4]::Vector{HYPRE_BigInt} == cols
-                    @test hypre_data[5]::Vector{HYPRE_Complex} == values    
+                    @test hypre_data[5]::Vector{HYPRE_Complex} == values
                 end
             end
         end
@@ -276,7 +269,7 @@ end
             return collect(row_indices), values
         end
         I, V = tuple_of_arrays(IV)
-        pb = pvector!(I, V, rows) |> fetch
+        pb = pvector(I, V, rows) |> fetch
         H = HYPREVector(pb)
         # Check for valid vector
         @test H.ijvector != HYPRE_IJVector(C_NULL)
@@ -694,7 +687,7 @@ function topartitioned(x::Vector, A::SparseMatrixCSC, b::Vector, backend)
         return findnz(A)..., b, x
     end
     II, JJ, VV, bb, xx = tuple_of_arrays(tmp)
-    A_p = psparse!(II, JJ, VV, rows, cols) |> fetch
+    A_p = psparse(II, JJ, VV, rows, cols) |> fetch
     b_p = PVector(bb, rows)
     x_p = PVector(xx, cols)
     return x_p, A_p, b_p
