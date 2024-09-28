@@ -7,6 +7,15 @@ end
 
 using Documenter
 using HYPRE
+using Changelog
+
+# Changelog
+Changelog.generate(
+    Changelog.Documenter(),
+    joinpath(@__DIR__, "..", "CHANGELOG.md"),
+    joinpath(@__DIR__, "src", "changelog.md");
+    repo = "Ferrite-FEM/Ferrite.jl",
+)
 
 makedocs(
     sitename = "HYPRE.jl",
@@ -16,6 +25,7 @@ makedocs(
     modules = [HYPRE],
     pages = Any[
         "Home" => "index.md",
+        hide("Changelog" => "changelog.md"),
         "matrix-vector.md",
         "solvers-preconditioners.md",
         "libhypre.md",

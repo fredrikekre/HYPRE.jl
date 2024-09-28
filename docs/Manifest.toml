@@ -2,7 +2,7 @@
 
 julia_version = "1.10.5"
 manifest_format = "2.0"
-project_hash = "7c98a97551e318432a6ba3bc3fd4758623a247ac"
+project_hash = "59b08f4b60c862a102ba6a5a40dd11b11cb0ae51"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -50,6 +50,11 @@ version = "0.16.33"
 git-tree-sha1 = "eb4cb44a499229b3b8426dcfb5dd85333951ff90"
 uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
 version = "0.4.2"
+
+[[deps.Changelog]]
+git-tree-sha1 = "e579c6157598169ad4ef17263bdf3452b4a3e316"
+uuid = "5217a498-cd5d-4ec6-b8c2-9b85a09b6e3e"
+version = "1.1.0"
 
 [[deps.CircularArrays]]
 deps = ["OffsetArrays"]
