@@ -3,7 +3,6 @@
 module HYPRE
 
 using MPI: MPI
-using SparseArrays: SparseArrays, SparseMatrixCSC, nonzeros, nzrange, rowvals
 
 export HYPREMatrix, HYPREVector
 
@@ -183,72 +182,16 @@ function Base.zero(b::HYPREVector)
     return x
 end
 
-##################################
-# SparseMatrixCSC -> HYPREMatrix #
-##################################
+
+#########################
+# Vector -> HYPREVector #
+#########################
 
 function Internals.check_n_rows(A, ilower, iupper)
     if size(A, 1) != (iupper - ilower + 1)
         throw(ArgumentError("number of rows in matrix does not match global start/end rows ilower and iupper"))
     end
 end
-
-function Internals.to_hypre_data(A::SparseMatrixCSC, ilower, iupper)
-    Internals.check_n_rows(A, ilower, iupper)
-    nnz = SparseArrays.nnz(A)
-    A_rows = rowvals(A)
-    A_vals = nonzeros(A)
-
-    # Initialize the data buffers HYPRE wants
-    nrows = HYPRE_Int(iupper - ilower + 1)      # Total number of rows
-    ncols = zeros(HYPRE_Int, nrows)             # Number of colums for each row
-    rows = collect(HYPRE_BigInt, ilower:iupper) # The row indices
-    cols = Vector{HYPRE_BigInt}(undef, nnz)     # The column indices
-    values = Vector{HYPRE_Complex}(undef, nnz)  # The values
-
-    # First pass to count nnz per row
-    @inbounds for j in 1:size(A, 2)
-        for i in nzrange(A, j)
-            row = A_rows[i]
-            ncols[row] += 1
-        end
-    end
-
-    # Keep track of the last index used for every row
-    lastinds = zeros(Int, nrows)
-    cumsum!((@view lastinds[2:end]), (@view ncols[1:end-1]))
-
-    # Second pass to populate the output
-    @inbounds for j in 1:size(A, 2)
-        for i in nzrange(A, j)
-            row = A_rows[i]
-            k = lastinds[row] += 1
-            val = A_vals[i]
-            cols[k] = j
-            values[k] = val
-        end
-    end
-    @assert nrows == length(ncols) == length(rows)
-    return nrows, ncols, rows, cols, values
-end
-
-# Note: keep in sync with the SparseMatrixCSR method
-function HYPREMatrix(comm::MPI.Comm, B::SparseMatrixCSC, ilower, iupper)
-    A = HYPREMatrix(comm, ilower, iupper)
-    nrows, ncols, rows, cols, values = Internals.to_hypre_data(B, ilower, iupper)
-    @check HYPRE_IJMatrixSetValues(A, nrows, ncols, rows, cols, values)
-    Internals.assemble_matrix(A)
-    return A
-end
-
-# Note: keep in sync with the SparseMatrixCSC method
-function HYPREMatrix(B::SparseMatrixCSC, ilower=1, iupper=size(B, 1))
-    return HYPREMatrix(MPI.COMM_SELF, B, ilower, iupper)
-end
-
-#########################
-# Vector -> HYPREVector #
-#########################
 
 function Internals.to_hypre_data(x::Vector, ilower, iupper)
     Internals.check_n_rows(x, ilower, iupper)
@@ -475,6 +418,7 @@ include("solver_options.jl")
 # Compatibility for Julias that doesn't support package extensions
 if !(isdefined(Base, :get_extension))
     include("../ext/HYPREPartitionedArrays.jl")
+    include("../ext/HYPRESparseArrays.jl")
     include("../ext/HYPRESparseMatricesCSR.jl")
 end
 

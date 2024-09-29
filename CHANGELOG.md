@@ -11,8 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    0.5.x. ([#17], [#18])
  - CEnum.jl dependency upgraded to release series 0.5.x (release series 0.4.x still
    allowed). ([#17], [#18])
- - PartitionedArrays.jl support is now moved to a package extension. ([#23])
- - SparseMatricesCSR.jl support is now moved to a package extension. ([#24])
+ - PartitionedArrays.jl support (`PSparseMatrix`, `PVector`) is now moved to a package
+   extension. ([#23])
+ - SparseMatricesCSR.jl support (`SparseMatrixCSR`) is now moved to a package extension.
+   ([#24])
+ - SparseArrays.jl support (`SparseMatrixCSC`) is now moved to a package extension. ([#25])
 
 ## [v1.5.0] - 2023-05-26
 ### Changed
@@ -93,3 +96,5 @@ Initial release of HYPRE.jl.
 [#17]: https://github.com/fredrikekre/HYPRE.jl/issues/17
 [#18]: https://github.com/fredrikekre/HYPRE.jl/issues/18
 [#23]: https://github.com/fredrikekre/HYPRE.jl/issues/23
+[#24]: https://github.com/fredrikekre/HYPRE.jl/issues/24
+[#25]: https://github.com/fredrikekre/HYPRE.jl/issues/25
