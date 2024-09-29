@@ -731,18 +731,24 @@ end
 
 @testset "solve with SparseMatrixCS(C|R)" begin
     # Setup
-    A = sprand(100, 100, 0.05); A = A'A + 5I
+    CSC = sprand(100, 100, 0.05); CSC = CSC'CSC + 5I
+    CSR = sparsecsr(findnz(CSC)..., size(CSC)...)
     b = rand(100)
-    x = zeros(100)
+    xcsc = zeros(100)
+    xcsr = zeros(100)
     # Solve
     tol = 1e-9
     pcg = HYPRE.PCG(; Tol = tol)
     ## solve!
-    HYPRE.solve!(pcg, x, A, b)
-    @test x ≈ A \ b atol=tol
+    HYPRE.solve!(pcg, xcsc, CSC, b)
+    @test xcsc ≈ CSC \ b atol=tol
+    HYPRE.solve!(pcg, xcsr, CSR, b)
+    @test xcsr ≈ CSC \ b atol=tol # TODO: CSR \ b fails
     ## solve
-    x = HYPRE.solve(pcg, A, b)
-    @test x ≈ A \ b atol=tol
+    xcsc = HYPRE.solve(pcg, CSC, b)
+    @test xcsc ≈ CSC \ b atol=tol
+    xcsr = HYPRE.solve(pcg, CSR, b)
+    @test xcsr ≈ CSC \ b atol=tol # TODO: CSR \ b fails
 end
 
 @testset "MPI execution" begin
