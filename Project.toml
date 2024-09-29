@@ -13,9 +13,11 @@ SparseMatricesCSR = "a0a7dd2c-ebf4-11e9-1f05-cf50bc540ca1"
 
 [weakdeps]
 PartitionedArrays = "5a9dfac6-5c52-46f7-8278-5e2210713be9"
+SparseMatricesCSR = "a0a7dd2c-ebf4-11e9-1f05-cf50bc540ca1"
 
 [extensions]
-HYPREPartitionedArrays = "PartitionedArrays"
+HYPREPartitionedArrays = ["PartitionedArrays", "SparseMatricesCSR"]
+HYPRESparseMatricesCSR = "SparseMatricesCSR"
 
 [compat]
 CEnum = "0.4, 0.5"
@@ -27,7 +29,8 @@ julia = "1.6"
 [extras]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PartitionedArrays = "5a9dfac6-5c52-46f7-8278-5e2210713be9"
+SparseMatricesCSR = "a0a7dd2c-ebf4-11e9-1f05-cf50bc540ca1"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["LinearAlgebra", "PartitionedArrays", "Test"]
+test = ["LinearAlgebra", "PartitionedArrays", "SparseMatricesCSR", "Test"]

@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  - PartitionedArrays.jl dependency upgraded from release series 0.3.x to release series
    0.5.x. ([#17], [#18])
- - PartitionedArrays.jl support is now moved to a package extension. ([#23])
  - CEnum.jl dependency upgraded to release series 0.5.x (release series 0.4.x still
    allowed). ([#17], [#18])
+ - PartitionedArrays.jl support is now moved to a package extension. ([#23])
+ - SparseMatricesCSR.jl support is now moved to a package extension. ([#24])
 
 ## [v1.5.0] - 2023-05-26
 ### Changed

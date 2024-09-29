@@ -184,7 +184,7 @@ function Internals.get_proc_rows(A::Union{PSparseMatrix, PVector})
     return ilower, iupper
 end
 
-function HYPREMatrix(B::PSparseMatrix)
+function HYPRE.HYPREMatrix(B::PSparseMatrix)
     # Use the same communicator as the matrix
     comm = Internals.get_comm(B)
     # Fetch rows owned by this process
@@ -206,7 +206,7 @@ end
 # PartitionedArrays.PVector -> HYPREVector #
 ############################################
 
-function HYPREVector(v::PVector)
+function HYPRE.HYPREVector(v::PVector)
     # Use the same communicator as the matrix
     comm = Internals.get_comm(v)
     # Fetch rows owned by this process

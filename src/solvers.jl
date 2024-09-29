@@ -51,18 +51,19 @@ See also [`solve`](@ref).
 solve!(pcg::HYPRESolver, x::HYPREVector, A::HYPREMatrix, ::HYPREVector)
 
 
-########################################
-# SparseMatrixCS(C|R) solver interface #
-########################################
+####################################
+# SparseMatrixCSC solver interface #
+####################################
 
-# TODO: This could use the HYPRE compile flag for sequential mode to avoid MPI overhead
-
-function solve(solver::HYPRESolver, A::Union{SparseMatrixCSC,SparseMatrixCSR}, b::Vector)
+# Note: keep in sync with the SparseMatrixCSR method
+function solve(solver::HYPRESolver, A::SparseMatrixCSC, b::Vector)
     hypre_x = solve(solver, HYPREMatrix(A), HYPREVector(b))
     x = copy!(similar(b, HYPRE_Complex), hypre_x)
     return x
 end
-function solve!(solver::HYPRESolver, x::Vector, A::Union{SparseMatrixCSC,SparseMatrixCSR}, b::Vector)
+
+# Note: keep in sync with the SparseMatrixCSR method
+function solve!(solver::HYPRESolver, x::Vector, A::SparseMatrixCSC, b::Vector)
     hypre_x = HYPREVector(x)
     solve!(solver, hypre_x, HYPREMatrix(A), HYPREVector(b))
     copy!(x, hypre_x)
