@@ -756,9 +756,7 @@ end
         "test_assembler.jl",
     ])
     for file in testfiles
-        mpiexec() do mpi
-            r = run(ignorestatus(`$(mpi) -n 2 $(Base.julia_cmd()) $(file)`))
-            @test r.exitcode == 0
-        end
+        r = run(ignorestatus(`$(mpiexec()) -n 2 $(Base.julia_cmd()) $(file)`))
+        @test r.exitcode == 0
     end
 end
