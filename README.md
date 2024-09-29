@@ -82,5 +82,5 @@ x = HYPRE.solve(bicg, A, b)
 [partarrays]: https://github.com/fverdugo/PartitionedArrays.jl
 [docs-img]: https://img.shields.io/badge/docs-stable%20release-blue.svg
 [docs-url]: https://fredrikekre.github.io/HYPRE.jl/
-[gh-actions-img]: https://github.com/fredrikekre/HYPRE.jl/workflows/CI/badge.svg
-[gh-actions-url]: https://github.com/fredrikekre/HYPRE.jl/actions?query=workflow%3ACI
+[gh-actions-img]: https://github.com/fredrikekre/HYPRE.jl/actions/workflows/ci.yml/badge.svg?branch=master
+[gh-actions-url]: https://github.com/fredrikekre/HYPRE.jl/actions/workflows/ci.yml?query=workflow%3ACI+branch%3Amaster
