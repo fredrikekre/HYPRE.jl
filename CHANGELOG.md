@@ -5,17 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v1.6.0] - 2024-09-29
 ### Changed
  - PartitionedArrays.jl dependency upgraded from release series 0.3.x to release series
    0.5.x. ([#17], [#18])
  - CEnum.jl dependency upgraded to release series 0.5.x (release series 0.4.x still
    allowed). ([#17], [#18])
- - PartitionedArrays.jl support (`PSparseMatrix`, `PVector`) is now moved to a package
+ - PartitionedArrays.jl support (`PSparseMatrix`, `PVector`) is now provided by a package
    extension. ([#23])
- - SparseMatricesCSR.jl support (`SparseMatrixCSR`) is now moved to a package extension.
+ - SparseMatricesCSR.jl support (`SparseMatrixCSR`) is now provided by a package extension.
    ([#24])
- - SparseArrays.jl support (`SparseMatrixCSC`) is now moved to a package extension. ([#25])
+ - SparseArrays.jl support (`SparseMatrixCSC`) is now provided by a package extension.
+   ([#25])
 
 ## [v1.5.0] - 2023-05-26
 ### Changed
