@@ -34,19 +34,20 @@ jobs:
           Pkg.add([
               PackageSpec(name = "ExplicitImports", version = "1.9"),
               PackageSpec(name = "PartitionedArrays"),
+              PackageSpec(name = "SparseArrays"),
               PackageSpec(name = "SparseMatricesCSR"),
           ])
       - name: ExplicitImports.jl code checks
         shell: julia --project=@explicit-imports {0}
         run: |
-          using HYPRE, ExplicitImports, PartitionedArrays, SparseMatricesCSR
+          using HYPRE, ExplicitImports, PartitionedArrays, SparseArrays, SparseMatricesCSR
           # Check HYPRE
           check_no_implicit_imports(HYPRE)
           check_no_stale_explicit_imports(HYPRE)
           check_all_qualified_accesses_via_owners(HYPRE)
           check_no_self_qualified_accesses(HYPRE)
           # Check extension modules
-          for ext in (:HYPREPartitionedArrays, :HYPRESparseMatricesCSR)
+          for ext in (:HYPREPartitionedArrays, :HYPRESparseArrays, :HYPRESparseMatricesCSR)
               extmod = Base.get_extension(HYPRE, ext)
               if extmod !== nothing
                   check_no_implicit_imports(extmod)
