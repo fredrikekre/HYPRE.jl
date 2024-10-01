@@ -164,14 +164,9 @@ end
 Internals.get_comm(_::Union{PSparseMatrix,PVector}) = MPI.COMM_SELF
 
 function Internals.get_proc_rows(A::Union{PSparseMatrix, PVector})
-    if A isa PVector
-        r = A.index_partition
-    else
-        r = A.row_partition
-    end
     ilower::HYPRE_BigInt = typemax(HYPRE_BigInt)
     iupper::HYPRE_BigInt = typemin(HYPRE_BigInt)
-    map(r) do a
+    map(partition(axes(A, 1))) do a
         # This is a map over the local process' owned indices. For MPI it will
         # be a single value but for DebugArray / Array it will have multiple
         # values.
@@ -192,7 +187,7 @@ function HYPRE.HYPREMatrix(B::PSparseMatrix)
     # Create the IJ matrix
     A = HYPREMatrix(comm, ilower, iupper)
     # Set all the values
-    map(local_values(B), B.row_partition, B.col_partition) do Bv, Br, Bc
+    map(local_values(B), partition(axes(B, 1)), partition(axes(B, 2))) do Bv, Br, Bc
         nrows, ncols, rows, cols, values = Internals.to_hypre_data(Bv, Br, Bc)
         @check HYPRE_IJMatrixSetValues(A, nrows, ncols, rows, cols, values)
         return nothing
@@ -214,7 +209,7 @@ function HYPRE.HYPREVector(v::PVector)
     # Create the IJ vector
     b = HYPREVector(comm, ilower, iupper)
     # Set all the values
-    map(own_values(v), v.index_partition) do vo, vr
+    map(own_values(v), partition(axes(v, 1))) do vo, vr
         o_to_g = own_to_global(vr)
 
         ilower_part = o_to_g[1]
@@ -260,7 +255,7 @@ end
 # TODO: Other eltypes could be support by using a intermediate buffer
 function Base.copy!(dst::PVector{<:AbstractVector{HYPRE_Complex}}, src::HYPREVector)
     copy_check(src, dst)
-    map(own_values(dst), dst.index_partition) do ov, vr
+    map(own_values(dst), partition(axes(dst, 1))) do ov, vr
         o_to_g = own_to_global(vr)
         il_src_part = o_to_g[1]
         iu_src_part = o_to_g[end]
@@ -283,7 +278,7 @@ function Base.copy!(dst::HYPREVector, src::PVector{<:AbstractVector{HYPRE_Comple
     copy_check(dst, src)
     # Re-initialize the vector
     @check HYPRE_IJVectorInitialize(dst)
-    map(own_values(src), src.index_partition) do ov, vr
+    map(own_values(src), partition(axes(src, 1))) do ov, vr
         o_to_g = own_to_global(vr)
         ilower_src_part = o_to_g[1]
         iupper_src_part = o_to_g[end]
