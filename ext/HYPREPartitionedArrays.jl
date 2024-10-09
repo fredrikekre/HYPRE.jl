@@ -14,14 +14,6 @@ using SparseMatricesCSR: SparseMatrixCSR, colvals
 # PartitionedArrays.PSparseMatrix -> HYPREMatrix #
 ##################################################
 
-function subarray_unsafe_supported()
-    # Wrapping of SubArrays as raw pointers may or may not be supported
-    # depending on the Julia version. If this is not supported, we have to fall
-    # back to allocation of an intermediate buffer. This logic can be removed if
-    # HYPRE.jl drops support for Julia < 1.9.
-    return VERSION >= v"1.9.0"
-end
-
 function Internals.to_hypre_data(
         A::SplitMatrix{<:SparseMatrixCSC}, r::AbstractLocalIndices, c::AbstractLocalIndices
     )
@@ -261,15 +253,8 @@ function Base.copy!(dst::PVector{<:AbstractVector{HYPRE_Complex}}, src::HYPREVec
         iu_src_part = o_to_g[end]
         nvalues = HYPRE_Int(iu_src_part - il_src_part + 1)
         indices = collect(HYPRE_BigInt, il_src_part:iu_src_part)
-        if subarray_unsafe_supported()
-            values = ov
-        else
-            values = collect(HYPRE_Complex, ov)
-        end
+        values = ov
         @check HYPRE_IJVectorGetValues(src, nvalues, indices, values)
-        if !subarray_unsafe_supported()
-            @. ov = values
-        end
     end
     return dst
 end
@@ -284,11 +269,7 @@ function Base.copy!(dst::HYPREVector, src::PVector{<:AbstractVector{HYPRE_Comple
         iupper_src_part = o_to_g[end]
         nvalues = HYPRE_Int(iupper_src_part - ilower_src_part + 1)
         indices = collect(HYPRE_BigInt, ilower_src_part:iupper_src_part)
-        if subarray_unsafe_supported()
-            values = ov
-        else
-            values = collect(HYPRE_Complex, ov)
-        end
+        values = ov
         @check HYPRE_IJVectorSetValues(dst, nvalues, indices, values)
     end
     # TODO: It shouldn't be necessary to assemble here since we only set owned rows (?)

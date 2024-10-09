@@ -1,11 +1,11 @@
-name: CI
+name: Test
 
 on:
   push:
     branches:
       - 'master'
       - 'release-'
-    tags: '*'
+    tags: ['*']
   pull_request:
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         version:
-          - '1.6'
+          - '1.10'
           - '1'
           - 'nightly'
         os:
