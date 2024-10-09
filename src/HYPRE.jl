@@ -50,11 +50,11 @@ end
 ###############
 
 mutable struct HYPREMatrix # <: AbstractMatrix{HYPRE_Complex}
-    #= const =# comm::MPI.Comm
-    #= const =# ilower::HYPRE_BigInt
-    #= const =# iupper::HYPRE_BigInt
-    #= const =# jlower::HYPRE_BigInt
-    #= const =# jupper::HYPRE_BigInt
+    const comm::MPI.Comm
+    const ilower::HYPRE_BigInt
+    const iupper::HYPRE_BigInt
+    const jlower::HYPRE_BigInt
+    const jupper::HYPRE_BigInt
     ijmatrix::HYPRE_IJMatrix
     parmatrix::HYPRE_ParCSRMatrix
 end
@@ -104,9 +104,9 @@ end
 ###############
 
 mutable struct HYPREVector # <: AbstractVector{HYPRE_Complex}
-    #= const =# comm::MPI.Comm
-    #= const =# ilower::HYPRE_BigInt
-    #= const =# iupper::HYPRE_BigInt
+    const comm::MPI.Comm
+    const ilower::HYPRE_BigInt
+    const iupper::HYPRE_BigInt
     ijvector::HYPRE_IJVector
     parvector::HYPRE_ParVector
 end
