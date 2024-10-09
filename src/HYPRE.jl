@@ -415,11 +415,4 @@ end
 include("solvers.jl")
 include("solver_options.jl")
 
-# Compatibility for Julias that doesn't support package extensions
-if !(isdefined(Base, :get_extension))
-    include("../ext/HYPREPartitionedArrays.jl")
-    include("../ext/HYPRESparseArrays.jl")
-    include("../ext/HYPRESparseMatricesCSR.jl")
-end
-
 end # module HYPRE
