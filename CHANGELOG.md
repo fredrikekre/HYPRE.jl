@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.7.0] - 2024-10-09
+### Changed
+ - Support for Julia 1.6 have been dropped and for this and future releases Julia 1.10 or
+   later will be required. ([#27])
+ - Constant struct fields of `HYPREMatrix` and `HYPREVector` are now marked with `const`.
+   ([#28])
+
 ## [v1.6.0] - 2024-09-29
 ### Changed
  - PartitionedArrays.jl dependency upgraded from release series 0.3.x to release series
@@ -85,6 +92,8 @@ Initial release of HYPRE.jl.
 [v1.3.1]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.3.1
 [v1.4.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.4.0
 [v1.5.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.5.0
+[v1.6.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.6.0
+[v1.7.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.7.0
 [#2]: https://github.com/fredrikekre/HYPRE.jl/issues/2
 [#5]: https://github.com/fredrikekre/HYPRE.jl/issues/5
 [#6]: https://github.com/fredrikekre/HYPRE.jl/issues/6
@@ -99,3 +108,5 @@ Initial release of HYPRE.jl.
 [#23]: https://github.com/fredrikekre/HYPRE.jl/issues/23
 [#24]: https://github.com/fredrikekre/HYPRE.jl/issues/24
 [#25]: https://github.com/fredrikekre/HYPRE.jl/issues/25
+[#27]: https://github.com/fredrikekre/HYPRE.jl/issues/27
+[#28]: https://github.com/fredrikekre/HYPRE.jl/issues/28
