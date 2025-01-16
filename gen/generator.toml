@@ -13,5 +13,7 @@ output_ignorelist = [
     # Bogus expression: const HYPRE_VERSION = ((("HYPRE_RELEASE_NAME Date Compiled: ")(__DATE__))(" "))(__TIME__)
     "HYPRE_VERSION",
     # Filter out MPI stuff
-    "^[PQ]?MPI"
+    "^[PQ]?MPI",
+    # Included in prologue.jl
+    "MPI_Comm",
 ]
