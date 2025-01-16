@@ -17,6 +17,7 @@ function Internals.safe_finalizer(Destroy, solver)
             s.solver = C_NULL
         end
     end
+    return
 end
 
 # Defining unsafe_convert enables ccall to automatically convert solver::HYPRESolver to
@@ -71,8 +72,8 @@ Create a `BiCGSTAB` solver. See HYPRE API reference for details and supported se
 mutable struct BiCGSTAB <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
-    precond::Union{HYPRESolver,Nothing}
-    function BiCGSTAB(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
+    precond::Union{HYPRESolver, Nothing}
+    function BiCGSTAB(comm::MPI.Comm = MPI.COMM_NULL; kwargs...)
         # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRBiCGSTABCreate
         solver = new(comm, C_NULL, nothing)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
@@ -166,8 +167,8 @@ Create a `FlexGMRES` solver. See HYPRE API reference for details and supported s
 mutable struct FlexGMRES <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
-    precond::Union{HYPRESolver,Nothing}
-    function FlexGMRES(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
+    precond::Union{HYPRESolver, Nothing}
+    function FlexGMRES(comm::MPI.Comm = MPI.COMM_NULL; kwargs...)
         # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRFlexGMRESCreate
         solver = new(comm, C_NULL, nothing)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
@@ -251,8 +252,8 @@ Create a `GMRES` solver. See HYPRE API reference for details and supported setti
 mutable struct GMRES <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
-    precond::Union{HYPRESolver,Nothing}
-    function GMRES(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
+    precond::Union{HYPRESolver, Nothing}
+    function GMRES(comm::MPI.Comm = MPI.COMM_NULL; kwargs...)
         # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRGMRESCreate
         solver = new(comm, C_NULL, nothing)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
@@ -299,7 +300,7 @@ Create a `Hybrid` solver. See HYPRE API reference for details and supported sett
 """
 mutable struct Hybrid <: HYPRESolver
     solver::HYPRE_Solver
-    precond::Union{HYPRESolver,Nothing}
+    precond::Union{HYPRESolver, Nothing}
     function Hybrid(; kwargs...)
         solver = new(C_NULL, nothing)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
@@ -396,7 +397,7 @@ settings.
 mutable struct ParaSails <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
-    function ParaSails(comm::MPI.Comm=MPI.COMM_WORLD; kwargs...)
+    function ParaSails(comm::MPI.Comm = MPI.COMM_WORLD; kwargs...)
         # Note: comm is used in this solver so default to COMM_WORLD
         solver = new(comm, C_NULL)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)
@@ -432,7 +433,7 @@ mutable struct PCG <: HYPRESolver
     comm::MPI.Comm
     solver::HYPRE_Solver
     precond::Union{HYPRESolver, Nothing}
-    function PCG(comm::MPI.Comm=MPI.COMM_NULL; kwargs...)
+    function PCG(comm::MPI.Comm = MPI.COMM_NULL; kwargs...)
         # comm defaults to COMM_NULL since it is unused in HYPRE_ParCSRPCGCreate
         solver = new(comm, C_NULL, nothing)
         solver_ref = Ref{HYPRE_Solver}(C_NULL)

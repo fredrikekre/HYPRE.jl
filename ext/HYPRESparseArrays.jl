@@ -33,7 +33,7 @@ function Internals.to_hypre_data(A::SparseMatrixCSC, ilower, iupper)
 
     # Keep track of the last index used for every row
     lastinds = zeros(Int, nrows)
-    cumsum!((@view lastinds[2:end]), (@view ncols[1:end-1]))
+    cumsum!((@view lastinds[2:end]), (@view ncols[1:(end - 1)]))
 
     # Second pass to populate the output
     @inbounds for j in 1:size(A, 2)
@@ -59,7 +59,7 @@ function HYPRE.HYPREMatrix(comm::MPI.Comm, B::SparseMatrixCSC, ilower, iupper)
 end
 
 # Note: keep in sync with the SparseMatrixCSC method
-function HYPRE.HYPREMatrix(B::SparseMatrixCSC, ilower=1, iupper=size(B, 1))
+function HYPRE.HYPREMatrix(B::SparseMatrixCSC, ilower = 1, iupper = size(B, 1))
     return HYPREMatrix(MPI.COMM_SELF, B, ilower, iupper)
 end
 

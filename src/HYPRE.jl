@@ -25,7 +25,7 @@ initialized.
 
 **Note**: This function *must* be called before using HYPRE functions.
 """
-function Init(; finalize_atexit=true)
+function Init(; finalize_atexit = true)
     if !(MPI.Initialized())
         MPI.Init()
     end
@@ -65,8 +65,11 @@ end
 Base.unsafe_convert(::Type{HYPRE_IJMatrix}, A::HYPREMatrix) = A.ijmatrix
 Base.unsafe_convert(::Type{HYPRE_ParCSRMatrix}, A::HYPREMatrix) = A.parmatrix
 
-function HYPREMatrix(comm::MPI.Comm, ilower::Integer,        iupper::Integer,
-                                     jlower::Integer=ilower, jupper::Integer=iupper)
+function HYPREMatrix(
+        comm::MPI.Comm,
+        ilower::Integer, iupper::Integer,
+        jlower::Integer = ilower, jupper::Integer = iupper
+    )
     # Create the IJ matrix
     A = HYPREMatrix(comm, ilower, iupper, jlower, jupper, C_NULL, C_NULL)
     ijmatrix_ref = Ref{HYPRE_IJMatrix}(C_NULL)
@@ -191,6 +194,7 @@ function Internals.check_n_rows(A, ilower, iupper)
     if size(A, 1) != (iupper - ilower + 1)
         throw(ArgumentError("number of rows in matrix does not match global start/end rows ilower and iupper"))
     end
+    return
 end
 
 function Internals.to_hypre_data(x::Vector, ilower, iupper)
@@ -209,8 +213,9 @@ function HYPREVector(comm::MPI.Comm, x::Vector, ilower, iupper)
     return b
 end
 
-HYPREVector(x::Vector, ilower=1, iupper=length(x)) =
-    HYPREVector(MPI.COMM_SELF, x, ilower, iupper)
+function HYPREVector(x::Vector, ilower = 1, iupper = length(x))
+    return HYPREVector(MPI.COMM_SELF, x, ilower, iupper)
+end
 
 # TODO: Other eltypes could be support by using a intermediate buffer
 function Base.copy!(dst::Vector{HYPRE_Complex}, src::HYPREVector)

@@ -21,12 +21,15 @@ push!(args, "-DHYPRE_ENABLE_CUDA_STREAMS=OFF")
 push!(args, "-DHYPRE_ENABLE_CUSPARSE=OFF")
 push!(args, "-DHYPRE_ENABLE_CURAND=OFF")
 
-headers = joinpath.(hypre_include_dir, [
-    "HYPRE.h",
-    "HYPRE_IJ_mv.h",
-    "HYPRE_parcsr_mv.h",
-    "HYPRE_parcsr_ls.h",
-])
+headers = joinpath.(
+    hypre_include_dir,
+    [
+        "HYPRE.h",
+        "HYPRE_IJ_mv.h",
+        "HYPRE_parcsr_mv.h",
+        "HYPRE_parcsr_ls.h",
+    ]
+)
 
 ctx = create_context(headers, args, options)
 

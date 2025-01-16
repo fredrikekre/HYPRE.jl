@@ -29,6 +29,7 @@ function Internals.set_options(solver::BiCGSTAB, kwargs)
             throw(ArgumentError("unknown option $k for HYPRE.BiCGSTAB"))
         end
     end
+    return
 end
 
 function Internals.set_options(solver::BoomerAMG, kwargs)
@@ -285,6 +286,7 @@ function Internals.set_options(solver::BoomerAMG, kwargs)
             throw(ArgumentError("unknown option $k for HYPRE.BoomerAMG"))
         end
     end
+    return
 end
 
 function Internals.set_options(solver::FlexGMRES, kwargs)
@@ -314,6 +316,7 @@ function Internals.set_options(solver::FlexGMRES, kwargs)
             throw(ArgumentError("unknown option $k for HYPRE.FlexGMRES"))
         end
     end
+    return
 end
 
 function Internals.set_options(solver::GMRES, kwargs)
@@ -347,6 +350,7 @@ function Internals.set_options(solver::GMRES, kwargs)
             throw(ArgumentError("unknown option $k for HYPRE.GMRES"))
         end
     end
+    return
 end
 
 function Internals.set_options(solver::Hybrid, kwargs)
@@ -456,6 +460,7 @@ function Internals.set_options(solver::Hybrid, kwargs)
             throw(ArgumentError("unknown option $k for HYPRE.Hybrid"))
         end
     end
+    return
 end
 
 function Internals.set_options(solver::ILU, kwargs)
@@ -490,6 +495,7 @@ function Internals.set_options(solver::ILU, kwargs)
             throw(ArgumentError("unknown option $k for HYPRE.ILU"))
         end
     end
+    return
 end
 
 function Internals.set_options(solver::ParaSails, kwargs)
@@ -510,6 +516,7 @@ function Internals.set_options(solver::ParaSails, kwargs)
             throw(ArgumentError("unknown option $k for HYPRE.ParaSails"))
         end
     end
+    return
 end
 
 function Internals.set_options(solver::PCG, kwargs)
@@ -547,4 +554,5 @@ function Internals.set_options(solver::PCG, kwargs)
             throw(ArgumentError("unknown option $k for HYPRE.PCG"))
         end
     end
+    return
 end

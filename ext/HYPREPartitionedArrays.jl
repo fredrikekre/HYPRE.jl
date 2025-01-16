@@ -66,7 +66,7 @@ function Internals.to_hypre_data(
 
     # Keep track of the last index used for every row
     lastinds = zeros(Int, nrows)
-    cumsum!((@view lastinds[2:end]), (@view ncols[1:end-1]))
+    cumsum!((@view lastinds[2:end]), (@view ncols[1:(end - 1)]))
 
     # Second pass to populate the output. Here we need to map column
     # indices from own/ghost to global
@@ -149,11 +149,11 @@ function Internals.to_hypre_data(
     return nrows, ncols, rows, cols, values
 end
 
-function Internals.get_comm(A::Union{PSparseMatrix{<:Any,<:M}, PVector{<:Any,<:M}}) where M <: MPIArray
+function Internals.get_comm(A::Union{PSparseMatrix{<:Any, <:M}, PVector{<:Any, <:M}}) where {M <: MPIArray}
     return partition(A).comm
 end
 
-Internals.get_comm(_::Union{PSparseMatrix,PVector}) = MPI.COMM_SELF
+Internals.get_comm(_::Union{PSparseMatrix, PVector}) = MPI.COMM_SELF
 
 function Internals.get_proc_rows(A::Union{PSparseMatrix, PVector})
     ilower::HYPRE_BigInt = typemax(HYPRE_BigInt)
@@ -238,10 +238,10 @@ function copy_check(dst::HYPREVector, src::PVector)
     il_src, iu_src = Internals.get_proc_rows(src)
     if il_dst != il_src && iu_dst != iu_src
         # TODO: Why require this?
-        throw(ArgumentError(
-            "row owner mismatch between dst ($(il_dst:iu_dst)) and src ($(il_src:iu_src))"
-        ))
+        msg = "row owner mismatch between dst ($(il_dst:iu_dst)) and src ($(il_src:iu_src))"
+        throw(ArgumentError(msg))
     end
+    return
 end
 
 # TODO: Other eltypes could be support by using a intermediate buffer
