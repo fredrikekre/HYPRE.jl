@@ -17,3 +17,6 @@ output_ignorelist = [
     # Included in prologue.jl
     "MPI_Comm",
 ]
+
+[codegen]
+use_ccall_macro = true
