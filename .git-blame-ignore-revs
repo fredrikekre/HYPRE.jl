@@ -1,0 +1,6 @@
+# Runic formatting
+# https://github.com/fredrikekre/HYPRE.jl/commit/640d77944e846a1f94e248bf2dea53310314f457
+640d77944e846a1f94e248bf2dea53310314f457
+# Switch from ccall() to @ccall in generated output
+# https://github.com/fredrikekre/HYPRE.jl/commit/b4790048a7803298004bde24658ac90215a837a4
+b4790048a7803298004bde24658ac90215a837a4
