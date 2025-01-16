@@ -85,7 +85,9 @@ function main(argc, argv)
     end
 
     # Preliminaries: want at least one processor per row
-    if n * n < num_procs; n = trunc(Int, sqrt(n)) + 1; end
+    if n * n < num_procs
+        n = trunc(Int, sqrt(n)) + 1
+    end
     N = n * n # global number of rows
     h = 1.0 / (n + 1) # mesh size
     h2 = h * h
@@ -257,8 +259,7 @@ function main(argc, argv)
     num_iterations = Ref{Cint}()
     final_res_norm = Ref{Cdouble}()
 
-    # AMG
-    if solver_id == 0
+    if solver_id == 0 # AMG
         # Create solver
         HYPRE_BoomerAMGCreate(solver_ref)
         solver = solver_ref[]
@@ -270,7 +271,7 @@ function main(argc, argv)
         HYPRE_BoomerAMGSetRelaxOrder(solver, 1) # uses C/F relaxation
         HYPRE_BoomerAMGSetNumSweeps(solver, 1)  # Sweeeps on each level
         HYPRE_BoomerAMGSetMaxLevels(solver, 20) # maximum number of levels
-        HYPRE_BoomerAMGSetTol(solver, 1e-7)     # conv. tolerance
+        HYPRE_BoomerAMGSetTol(solver, 1.0e-7)   # conv. tolerance
 
         # Now setup and solve!
         HYPRE_BoomerAMGSetup(solver, parcsr_A, par_b, par_x)
@@ -289,15 +290,14 @@ function main(argc, argv)
         # Destroy solver
         HYPRE_BoomerAMGDestroy(solver)
 
-    # PCG
-    elseif solver_id == 50
+    elseif solver_id == 50 # PCG
         # Create solver
         HYPRE_ParCSRPCGCreate(MPI_COMM_WORLD, solver_ref)
         solver = solver_ref[]
 
         # Set some parameters (See Reference Manual for more parameters)
         HYPRE_PCGSetMaxIter(solver, 1000) # max iterations
-        HYPRE_PCGSetTol(solver, 1e-7) # conv. tolerance
+        HYPRE_PCGSetTol(solver, 1.0e-7) # conv. tolerance
         HYPRE_PCGSetTwoNorm(solver, 1) # use the two norm as the stopping criteria
         HYPRE_PCGSetPrintLevel(solver, 2) # prints out the iteration info
         HYPRE_PCGSetLogging(solver, 1) # needed to get run info later
@@ -319,15 +319,14 @@ function main(argc, argv)
         # Destroy solver
         HYPRE_ParCSRPCGDestroy(solver)
 
-    # PCG with AMG preconditioner
-    elseif solver_id == 1
+    elseif solver_id == 1 # PCG with AMG preconditioner
         # Create solver
         HYPRE_ParCSRPCGCreate(MPI_COMM_WORLD, solver_ref)
         solver = solver_ref[]
 
         # Set some parameters (See Reference Manual for more parameters)
         HYPRE_PCGSetMaxIter(solver, 1000) # max iterations
-        HYPRE_PCGSetTol(solver, 1e-7) # conv. tolerance
+        HYPRE_PCGSetTol(solver, 1.0e-7) # conv. tolerance
         HYPRE_PCGSetTwoNorm(solver, 1) # use the two norm as the stopping criteria
         HYPRE_PCGSetPrintLevel(solver, 2) # print solve info
         HYPRE_PCGSetLogging(solver, 1) # needed to get run info later
@@ -364,15 +363,14 @@ function main(argc, argv)
         HYPRE_ParCSRPCGDestroy(solver)
         HYPRE_BoomerAMGDestroy(precond)
 
-    # PCG with Parasails Preconditioner
-    elseif solver_id == 8
+    elseif solver_id == 8 # PCG with Parasails Preconditioner
         # Create solver
         HYPRE_ParCSRPCGCreate(MPI_COMM_WORLD, solver_ref)
         solver = solver_ref[]
 
         # Set some parameters (See Reference Manual for more parameters)
         HYPRE_PCGSetMaxIter(solver, 1000) # max iterations
-        HYPRE_PCGSetTol(solver, 1e-7) # conv. tolerance
+        HYPRE_PCGSetTol(solver, 1.0e-7) # conv. tolerance
         HYPRE_PCGSetTwoNorm(solver, 1) # use the two norm as the stopping criteria
         HYPRE_PCGSetPrintLevel(solver, 2) # print solve info
         HYPRE_PCGSetLogging(solver, 1) # needed to get run info later
@@ -412,8 +410,7 @@ function main(argc, argv)
         HYPRE_ParCSRPCGDestroy(solver)
         HYPRE_ParaSailsDestroy(precond)
 
-    # Flexible GMRES with AMG Preconditioner
-    elseif solver_id == 61
+    elseif solver_id == 61 # Flexible GMRES with AMG Preconditioner
 
         # Create solver
         HYPRE_ParCSRFlexGMRESCreate(MPI_COMM_WORLD, solver_ref)
@@ -422,7 +419,7 @@ function main(argc, argv)
         # Set some parameters (See Reference Manual for more parameters)
         HYPRE_FlexGMRESSetKDim(solver, 30) # restart
         HYPRE_FlexGMRESSetMaxIter(solver, 1000) # max iterations
-        HYPRE_FlexGMRESSetTol(solver, 1e-7) # conv. tolerance
+        HYPRE_FlexGMRESSetTol(solver, 1.0e-7) # conv. tolerance
         HYPRE_FlexGMRESSetPrintLevel(solver, 2) # print solve info
         HYPRE_FlexGMRESSetLogging(solver, 1) # needed to get run info later
 
@@ -459,7 +456,9 @@ function main(argc, argv)
         HYPRE_BoomerAMGDestroy(precond)
 
     else
-        if myid == 0; println("Invalid solver id specified."); end
+        if myid == 0
+            println("Invalid solver id specified.")
+        end
     end
 
     # Clean up

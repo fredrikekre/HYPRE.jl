@@ -31,11 +31,10 @@ end
 
 @testset "HYPREMatrix(::SparseMatrixCS(C|R))" begin
     ilower, iupper = 4, 6
-    CSC = convert(SparseMatrixCSC{HYPRE_Complex, HYPRE_Int}, sparse([
-        1 2 0 0 3
-        0 4 0 5 0
-        0 6 7 0 8
-    ]))
+    CSC = convert(
+        SparseMatrixCSC{HYPRE_Complex, HYPRE_Int},
+        sparse([1 2 0 0 3; 0 4 0 5 0; 0 6 7 0 8])
+    )
     CSR = sparsecsr(findnz(CSC)..., size(CSC)...)
     @test CSC == CSR
     csc = Internals.to_hypre_data(CSC, ilower, iupper)
@@ -52,8 +51,8 @@ end
     @test csr[5] == CSR.nzval
     @test_broken csr[5]::Vector{HYPRE_Complex} === CSR.nzval
 
-    @test_throws ArgumentError Internals.to_hypre_data(CSC, ilower, iupper-1)
-    @test_throws ArgumentError Internals.to_hypre_data(CSR, ilower, iupper+1)
+    @test_throws ArgumentError Internals.to_hypre_data(CSC, ilower, iupper - 1)
+    @test_throws ArgumentError Internals.to_hypre_data(CSR, ilower, iupper + 1)
 
     ilower, iupper = 6, 10
     CSC = sprand(5, 10, 0.3)
@@ -70,7 +69,7 @@ end
     H = HYPREMatrix(CSR, ilower, iupper)
     @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
     @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
-    H = HYPREMatrix(MPI.COMM_WORLD, CSR, ilower,  iupper)
+    H = HYPREMatrix(MPI.COMM_WORLD, CSR, ilower, iupper)
     @test H.ijmatrix != HYPRE_IJMatrix(C_NULL)
     @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
 
@@ -183,7 +182,6 @@ end
 end
 
 
-
 @testset "HYPREVector" begin
     h = HYPREVector(MPI.COMM_WORLD, 1, 5)
     @test h.ijvector != HYPRE_IJVector(C_NULL)
@@ -283,7 +281,7 @@ end
         @test H === H′
         pbc = similar(pb)
         copy!(pbc, H)
-        @test pbc == 2*pb
+        @test pbc == 2 * pb
     end
 end
 
@@ -360,16 +358,16 @@ end
     b_h = HYPREVector(b)
     x_h = HYPREVector(x)
     # Solve
-    tol = 1e-9
+    tol = 1.0e-9
     bicg = HYPRE.BiCGSTAB(; Tol = tol)
     HYPRE.solve!(bicg, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(bicg, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test solver queries
     @test HYPRE.GetFinalRelativeResidualNorm(bicg) < tol
     @test HYPRE.GetNumIterations(bicg) > 0
@@ -381,11 +379,11 @@ end
     HYPRE.solve!(bicg, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(bicg, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Tests Internals.set_precond_defaults for BoomerAMG
     precond = HYPRE.BoomerAMG()
     bicg = HYPRE.BiCGSTAB(; Tol = tol, Precond = precond)
@@ -393,7 +391,7 @@ end
     HYPRE.solve!(bicg, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
 end
 
 @testset "BoomerAMG" begin
@@ -407,11 +405,11 @@ end
     for i in 1:99
         k = (1 + rand()) * [1.0 -1.0; -1.0 1.0]
         append!(V, k)
-        append!(I, [i, i+1, i, i+1]) # rows
-        append!(J, [i, i, i+1, i+1]) # cols
+        append!(I, [i, i + 1, i, i + 1]) # rows
+        append!(J, [i, i, i + 1, i + 1]) # cols
     end
     A = sparse(I, J, V)
-    A[:, 1] .= 0; A[1, :] .= 0; A[:, end] .= 0; A[end, :] .= 0;
+    A[:, 1] .= 0; A[1, :] .= 0; A[:, end] .= 0; A[end, :] .= 0
     A[1, 1] = 2; A[end, end] = 2
     @test isposdef(A)
     b = rand(100)
@@ -421,7 +419,7 @@ end
     b_h = HYPREVector(b, ilower, iupper)
     x_h = HYPREVector(b, ilower, iupper)
     # Solve
-    tol = 1e-9
+    tol = 1.0e-9
     amg = HYPRE.BoomerAMG(; Tol = tol)
     HYPRE.solve!(amg, x_h, A_h, b_h)
     copy!(x, x_h)
@@ -451,16 +449,16 @@ end
     b_h = HYPREVector(b)
     x_h = HYPREVector(x)
     # Solve
-    tol = 1e-9
+    tol = 1.0e-9
     gmres = HYPRE.FlexGMRES(; Tol = tol)
     HYPRE.solve!(gmres, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(gmres, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test solver queries
     @test HYPRE.GetFinalRelativeResidualNorm(gmres) < tol
     @test HYPRE.GetNumIterations(gmres) > 0
@@ -472,11 +470,11 @@ end
     HYPRE.solve!(gmres, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(gmres, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
 end
 
 
@@ -494,16 +492,16 @@ end
     b_h = HYPREVector(b)
     x_h = HYPREVector(x)
     # Solve
-    tol = 1e-9
+    tol = 1.0e-9
     gmres = HYPRE.GMRES(; Tol = tol)
     HYPRE.solve!(gmres, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(gmres, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test solver queries
     @test HYPRE.GetFinalRelativeResidualNorm(gmres) < tol
     @test HYPRE.GetNumIterations(gmres) > 0
@@ -515,11 +513,11 @@ end
     HYPRE.solve!(gmres, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(gmres, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
 end
 
 @testset "Hybrid" begin
@@ -536,16 +534,16 @@ end
     b_h = HYPREVector(b)
     x_h = HYPREVector(x)
     # Solve
-    tol = 1e-9
+    tol = 1.0e-9
     hybrid = HYPRE.Hybrid(; Tol = tol)
     HYPRE.solve!(hybrid, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(hybrid, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test solver queries
     @test HYPRE.GetFinalRelativeResidualNorm(hybrid) < tol
     @test HYPRE.GetNumIterations(hybrid) > 0
@@ -557,11 +555,11 @@ end
     HYPRE.solve!(hybrid, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(hybrid, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
 end
 
 
@@ -579,16 +577,16 @@ end
     b_h = HYPREVector(b)
     x_h = HYPREVector(x)
     # Solve
-    tol = 1e-9
+    tol = 1.0e-9
     ilu = HYPRE.ILU(; Tol = tol)
     HYPRE.solve!(ilu, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(ilu, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test solver queries
     @test HYPRE.GetFinalRelativeResidualNorm(ilu) < tol
     @test HYPRE.GetNumIterations(ilu) > 0
@@ -600,11 +598,11 @@ end
     HYPRE.solve!(pcg, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(pcg, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
 end
 
 
@@ -623,13 +621,13 @@ end
     b_h = HYPREVector(b, ilower, iupper)
     x_h = HYPREVector(b, ilower, iupper)
     # Solve with ParaSails as preconditioner
-    tol = 1e-9
+    tol = 1.0e-9
     parasails = HYPRE.ParaSails()
     pcg = HYPRE.PCG(; Tol = tol, Precond = parasails)
     HYPRE.solve!(pcg, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test solver queries (should error)
     @test_throws ArgumentError("cannot get residual norm for HYPRE.ParaSails") HYPRE.GetFinalRelativeResidualNorm(parasails)
     @test_throws ArgumentError("cannot get number of iterations for HYPRE.ParaSails") HYPRE.GetNumIterations(parasails)
@@ -650,16 +648,16 @@ end
     b_h = HYPREVector(b, ilower, iupper)
     x_h = HYPREVector(b, ilower, iupper)
     # Solve
-    tol = 1e-9
+    tol = 1.0e-9
     pcg = HYPRE.PCG(; Tol = tol)
     HYPRE.solve!(pcg, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(pcg, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test solver queries
     @test HYPRE.GetFinalRelativeResidualNorm(pcg) < tol
     @test HYPRE.GetNumIterations(pcg) > 0
@@ -671,11 +669,11 @@ end
     HYPRE.solve!(pcg, x_h, A_h, b_h)
     copy!(x, x_h)
     # Test result with direct solver
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
     # Test without passing initial guess
     x_h = HYPRE.solve(pcg, A_h, b_h)
     copy!(x, x_h)
-    @test x ≈ A \ b atol=tol
+    @test x ≈ A \ b atol = tol
 end
 
 function topartitioned(x::Vector, A::SparseMatrixCSC, b::Vector, backend)
@@ -713,18 +711,18 @@ end
         end
 
         # Solve
-        tol = 1e-9
+        tol = 1.0e-9
         pcg = HYPRE.PCG(; Tol = tol)
         ## solve!
         HYPRE.solve!(pcg, x_p, A_p, b_p)
-        ref = A\b
+        ref = A \ b
         map(local_values(x_p)) do x
-            @test x ≈ ref atol=tol
+            @test x ≈ ref atol = tol
         end
         ## solve
         x_p = HYPRE.solve(pcg, A_p, b_p)
         map(local_values(x_p)) do x
-            @test x ≈ ref atol=tol
+            @test x ≈ ref atol = tol
         end
     end
 end
@@ -737,24 +735,27 @@ end
     xcsc = zeros(100)
     xcsr = zeros(100)
     # Solve
-    tol = 1e-9
+    tol = 1.0e-9
     pcg = HYPRE.PCG(; Tol = tol)
     ## solve!
     HYPRE.solve!(pcg, xcsc, CSC, b)
-    @test xcsc ≈ CSC \ b atol=tol
+    @test xcsc ≈ CSC \ b atol = tol
     HYPRE.solve!(pcg, xcsr, CSR, b)
-    @test xcsr ≈ CSC \ b atol=tol # TODO: CSR \ b fails
+    @test xcsr ≈ CSC \ b atol = tol # TODO: CSR \ b fails
     ## solve
     xcsc = HYPRE.solve(pcg, CSC, b)
-    @test xcsc ≈ CSC \ b atol=tol
+    @test xcsc ≈ CSC \ b atol = tol
     xcsr = HYPRE.solve(pcg, CSR, b)
-    @test xcsr ≈ CSC \ b atol=tol # TODO: CSR \ b fails
+    @test xcsr ≈ CSC \ b atol = tol # TODO: CSR \ b fails
 end
 
 @testset "MPI execution" begin
-    testfiles = joinpath.(@__DIR__, [
-        "test_assembler.jl",
-    ])
+    testfiles = joinpath.(
+        @__DIR__,
+        [
+            "test_assembler.jl",
+        ]
+    )
     for file in testfiles
         r = run(ignorestatus(`$(mpiexec()) -n 2 $(Base.julia_cmd()) $(file)`))
         @test r.exitcode == 0

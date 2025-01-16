@@ -53,7 +53,7 @@ function HYPRE.HYPREMatrix(comm::MPI.Comm, B::SparseMatrixCSR, ilower, iupper)
 end
 
 # Note: keep in sync with the SparseMatrixCSC method
-function HYPRE.HYPREMatrix(B::SparseMatrixCSR, ilower=1, iupper=size(B, 1))
+function HYPRE.HYPREMatrix(B::SparseMatrixCSR, ilower = 1, iupper = size(B, 1))
     return HYPREMatrix(MPI.COMM_SELF, B, ilower, iupper)
 end
 

@@ -30,11 +30,13 @@ end
 function values_and_indices(n)
     idx = [n - 1, n, n + 1]
     a = Float64[
-          n -2n  -n
-        -2n   n -2n
-         -n -2n   n
+        # runic: off
+          n  -2n   -n
+        -2n    n  -2n
+         -n  -2n    n
+        # runic: on
     ]
-    b = Float64[n, n/2, n/3]
+    b = Float64[n, n / 2, n / 3]
     return idx, a, b
 end
 

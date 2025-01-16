@@ -80,7 +80,7 @@ macro check(arg)
 end
 
 # Export everything with HYPRE_ prefix
-for name in names(@__MODULE__; all=true)
+for name in names(@__MODULE__; all = true)
     if startswith(string(name), "HYPRE_")
         @eval export $name
     end
@@ -92,6 +92,7 @@ function __init__()
     patch_ref = Ref{HYPRE_Int}(-1)
     @check HYPRE_VersionNumber(major_ref, minor_ref, patch_ref, C_NULL)
     global VERSION = VersionNumber(major_ref[], minor_ref[], patch_ref[])
+    return
 end
 
 end

@@ -5,7 +5,7 @@ function generate_options(io, structname, prefixes...)
     println(io, "function Internals.set_options(solver::$(structname), kwargs)")
     println(io, "    for (k, v) in kwargs")
 
-    ns = Tuple{Symbol,String}[]
+    ns = Tuple{Symbol, String}[]
     for prefix in prefixes, n in names(LibHYPRE)
         r = Regex("^" * prefix * "([A-Z].*)\$")
         if (m = match(r, string(n)); m !== nothing)
@@ -43,6 +43,7 @@ function generate_options(io, structname, prefixes...)
     println(io, "        end")
     println(io, "    end")
     println(io, "end")
+    return
 end
 
 open(joinpath(@__DIR__, "..", "src", "solver_options.jl"), "w") do io
