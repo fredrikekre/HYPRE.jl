@@ -34,7 +34,7 @@ const HYPRE_Complex = HYPRE_Real
 
 # no prototype is found for this function at HYPRE_utilities.h:116:11, please use with caution
 function HYPRE_Init()
-    return @ccall libHYPRE.HYPRE_Init()::HYPRE_Int
+    return @ccall libHYPRE.HYPRE_Initialize()::HYPRE_Int
 end
 
 # no prototype is found for this function at HYPRE_utilities.h:117:11, please use with caution
