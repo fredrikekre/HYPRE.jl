@@ -420,7 +420,7 @@ end
     x_h = HYPREVector(b, ilower, iupper)
     # Solve
     tol = 1.0e-9
-    amg = HYPRE.BoomerAMG(; Tol = tol)
+    amg = HYPRE.BoomerAMG(; Tol = tol, MaxIter = 25)
     HYPRE.solve!(amg, x_h, A_h, b_h)
     copy!(x, x_h)
     @test (A * x ≈ b) atol = tol * norm(b) # default BoomerAMG criteria
