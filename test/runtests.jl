@@ -17,7 +17,7 @@ HYPRE.Init()
 
 @testset "LibHYPRE" begin
     @test LibHYPRE.VERSION > VERSION # :)
-    @test LibHYPRE.VERSION.major in (2, 3)
+    @test LibHYPRE.VERSION.major == 3
 end
 
 @testset "HYPREMatrix" begin

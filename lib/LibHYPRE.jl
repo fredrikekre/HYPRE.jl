@@ -32,8 +32,12 @@ const HYPRE_Real = Cdouble
 
 const HYPRE_Complex = HYPRE_Real
 
-# no prototype is found for this function at HYPRE_utilities.h:116:11, please use with caution
 function HYPRE_Init()
+    return HYPRE_Initialize()
+end
+
+# no prototype is found for this function at HYPRE_utilities.h:116:11, please use with caution
+function HYPRE_Initialize()
     return @ccall libHYPRE.HYPRE_Initialize()::HYPRE_Int
 end
 
