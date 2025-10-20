@@ -29,14 +29,6 @@ end
     @test H.parmatrix != HYPRE_ParCSRMatrix(C_NULL)
 end
 
-@testset "Threads" begin
-    @test HYPRE.set_nthreads(1) == 1
-    @test HYPRE.set_nthreads(2) == 2
-    @test HYPRE.nthreads() == 2
-    @test HYPRE.set_nthreads(0) == 2
-    @test HYPRE.set_nthreads(1_000_000) == Sys.CPU_THREADS
-end
-
 @testset "HYPREMatrix(::SparseMatrixCS(C|R))" begin
     ilower, iupper = 4, 6
     CSC = convert(
@@ -755,6 +747,16 @@ end
     @test xcsc ≈ CSC \ b atol = tol
     xcsr = HYPRE.solve(pcg, CSR, b)
     @test xcsr ≈ CSC \ b atol = tol # TODO: CSR \ b fails
+end
+
+@testset "Threads" begin
+    current = HYPRE.nthreads()
+    @test HYPRE.set_nthreads(1) == 1
+    @test HYPRE.set_nthreads(2) == 2
+    @test HYPRE.nthreads() == 2
+    @test HYPRE.set_nthreads(0) == 2
+    @test HYPRE.set_nthreads(1_000_000) == Sys.CPU_THREADS
+    @test HYPRE.set_nthreads(current)
 end
 
 @testset "MPI execution" begin
