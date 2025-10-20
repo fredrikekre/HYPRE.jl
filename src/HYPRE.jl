@@ -19,7 +19,7 @@ include("Internals.jl")
 """
     Init(; finalize_atexit=true)
 
-Wrapper around `HYPRE_Init`. If `finalize_atexit` is `true` a Julia exit hook is added,
+Wrapper around `HYPRE_Initialize`. If `finalize_atexit` is `true` a Julia exit hook is added,
 which calls `HYPRE_Finalize`. This method will also call `MPI.Init` unless MPI is already
 initialized.
 
@@ -30,7 +30,7 @@ function Init(; finalize_atexit = true)
         MPI.Init()
     end
     # TODO: Check if already initialized?
-    HYPRE_Init()
+    HYPRE_Initialize()
     if finalize_atexit
         # TODO: MPI only calls the finalizer if not exiting due to a Julia exeption. Does
         #       the same reasoning apply here?
