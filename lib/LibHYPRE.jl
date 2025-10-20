@@ -3,7 +3,7 @@ local libHYPRE # Silence of the Langs(erver)
 using HYPRE_jll: HYPRE_jll, libHYPRE
 export HYPRE_jll
 
-using CEnum: @cenum
+using CEnum: CEnum, @cenum
 
 ###########################
 ## Start gen/prologue.jl ##
@@ -24,29 +24,50 @@ end
 #########################
 
 
-const HYPRE_BigInt = Cint
-
 const HYPRE_Int = Cint
+
+function HYPRE_Initialize()
+    return @ccall libHYPRE.HYPRE_Initialize()::HYPRE_Int
+end
+
+function HYPRE_SetSpGemmUseVendor(use_vendor)
+    return @ccall libHYPRE.HYPRE_SetSpGemmUseVendor(use_vendor::HYPRE_Int)::HYPRE_Int
+end
+
+const HYPRE_BigInt = Cint
 
 const HYPRE_Real = Cdouble
 
 const HYPRE_Complex = HYPRE_Real
 
-function HYPRE_Init()
-    return HYPRE_Initialize()
+const hypre_double = Cdouble
+
+const hypre_float = Cfloat
+
+const hypre_long_double = Float64
+
+function HYPRE_AssumedPartitionCheck()
+    return @ccall libHYPRE.HYPRE_AssumedPartitionCheck()::HYPRE_Int
 end
 
-# no prototype is found for this function at HYPRE_utilities.h:116:11, please use with caution
-function HYPRE_Initialize()
-    return @ccall libHYPRE.HYPRE_Initialize()::HYPRE_Int
+@cenum HYPRE_Precision::UInt32 begin
+    HYPRE_REAL_SINGLE = 0
+    HYPRE_REAL_DOUBLE = 1
+    HYPRE_REAL_LONGDOUBLE = 2
 end
 
-# no prototype is found for this function at HYPRE_utilities.h:117:11, please use with caution
-function HYPRE_Finalize()
-    return @ccall libHYPRE.HYPRE_Finalize()::HYPRE_Int
+function HYPRE_SetGlobalPrecision(precision)
+    return @ccall libHYPRE.HYPRE_SetGlobalPrecision(precision::HYPRE_Precision)::HYPRE_Int
 end
 
-# no prototype is found for this function at HYPRE_utilities.h:124:11, please use with caution
+function HYPRE_GetGlobalPrecision(precision)
+    return @ccall libHYPRE.HYPRE_GetGlobalPrecision(precision::Ptr{HYPRE_Precision})::HYPRE_Int
+end
+
+function HYPRE_GetGlobalError(comm)
+    return @ccall libHYPRE.HYPRE_GetGlobalError(comm::MPI_Comm)::HYPRE_Int
+end
+
 function HYPRE_GetError()
     return @ccall libHYPRE.HYPRE_GetError()::HYPRE_Int
 end
@@ -55,7 +76,6 @@ function HYPRE_CheckError(hypre_ierr, hypre_error_code)
     return @ccall libHYPRE.HYPRE_CheckError(hypre_ierr::HYPRE_Int, hypre_error_code::HYPRE_Int)::HYPRE_Int
 end
 
-# no prototype is found for this function at HYPRE_utilities.h:131:11, please use with caution
 function HYPRE_GetErrorArg()
     return @ccall libHYPRE.HYPRE_GetErrorArg()::HYPRE_Int
 end
@@ -64,7 +84,6 @@ function HYPRE_DescribeError(hypre_ierr, descr)
     return @ccall libHYPRE.HYPRE_DescribeError(hypre_ierr::HYPRE_Int, descr::Ptr{Cchar})::Cvoid
 end
 
-# no prototype is found for this function at HYPRE_utilities.h:137:11, please use with caution
 function HYPRE_ClearAllErrors()
     return @ccall libHYPRE.HYPRE_ClearAllErrors()::HYPRE_Int
 end
@@ -73,9 +92,48 @@ function HYPRE_ClearError(hypre_error_code)
     return @ccall libHYPRE.HYPRE_ClearError(hypre_error_code::HYPRE_Int)::HYPRE_Int
 end
 
-# no prototype is found for this function at HYPRE_utilities.h:143:11, please use with caution
+function HYPRE_SetPrintErrorMode(mode)
+    return @ccall libHYPRE.HYPRE_SetPrintErrorMode(mode::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_SetPrintErrorVerbosity(code, verbosity)
+    return @ccall libHYPRE.HYPRE_SetPrintErrorVerbosity(code::HYPRE_Int, verbosity::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_GetErrorMessages(buffer, bufsz)
+    return @ccall libHYPRE.HYPRE_GetErrorMessages(buffer::Ptr{Ptr{Cchar}}, bufsz::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_PrintErrorMessages(comm)
+    return @ccall libHYPRE.HYPRE_PrintErrorMessages(comm::MPI_Comm)::HYPRE_Int
+end
+
+function HYPRE_ClearErrorMessages()
+    return @ccall libHYPRE.HYPRE_ClearErrorMessages()::HYPRE_Int
+end
+
+function HYPRE_DeviceInitialize()
+    return @ccall libHYPRE.HYPRE_DeviceInitialize()::HYPRE_Int
+end
+
+function HYPRE_Finalize()
+    return @ccall libHYPRE.HYPRE_Finalize()::HYPRE_Int
+end
+
+function HYPRE_Initialized()
+    return @ccall libHYPRE.HYPRE_Initialized()::HYPRE_Int
+end
+
+function HYPRE_Finalized()
+    return @ccall libHYPRE.HYPRE_Finalized()::HYPRE_Int
+end
+
 function HYPRE_PrintDeviceInfo()
     return @ccall libHYPRE.HYPRE_PrintDeviceInfo()::HYPRE_Int
+end
+
+function HYPRE_MemoryPrintUsage(comm, level, _function, line)
+    return @ccall libHYPRE.HYPRE_MemoryPrintUsage(comm::MPI_Comm, level::HYPRE_Int, _function::Ptr{Cchar}, line::HYPRE_Int)::HYPRE_Int
 end
 
 function HYPRE_Version(version_ptr)
@@ -84,11 +142,6 @@ end
 
 function HYPRE_VersionNumber(major_ptr, minor_ptr, patch_ptr, single_ptr)
     return @ccall libHYPRE.HYPRE_VersionNumber(major_ptr::Ptr{HYPRE_Int}, minor_ptr::Ptr{HYPRE_Int}, patch_ptr::Ptr{HYPRE_Int}, single_ptr::Ptr{HYPRE_Int})::HYPRE_Int
-end
-
-# no prototype is found for this function at HYPRE_utilities.h:174:11, please use with caution
-function HYPRE_AssumedPartitionCheck()
-    return @ccall libHYPRE.HYPRE_AssumedPartitionCheck()::HYPRE_Int
 end
 
 @cenum _HYPRE_MemoryLocation::Int32 begin
@@ -123,12 +176,8 @@ function HYPRE_GetExecutionPolicy(exec_policy)
     return @ccall libHYPRE.HYPRE_GetExecutionPolicy(exec_policy::Ptr{HYPRE_ExecutionPolicy})::HYPRE_Int
 end
 
-function HYPRE_SetStructExecutionPolicy(exec_policy)
-    return @ccall libHYPRE.HYPRE_SetStructExecutionPolicy(exec_policy::HYPRE_ExecutionPolicy)::HYPRE_Int
-end
-
-function HYPRE_GetStructExecutionPolicy(exec_policy)
-    return @ccall libHYPRE.HYPRE_GetStructExecutionPolicy(exec_policy::Ptr{HYPRE_ExecutionPolicy})::HYPRE_Int
+function HYPRE_GetExecutionPolicyName(exec_policy)
+    return @ccall libHYPRE.HYPRE_GetExecutionPolicyName(exec_policy::HYPRE_ExecutionPolicy)::Ptr{Cchar}
 end
 
 function HYPRE_SetUmpireDevicePoolSize(nbytes)
@@ -167,13 +216,43 @@ function HYPRE_SetGPUMemoryPoolSize(bin_growth, min_bin, max_bin, max_cached_byt
     return @ccall libHYPRE.HYPRE_SetGPUMemoryPoolSize(bin_growth::HYPRE_Int, min_bin::HYPRE_Int, max_bin::HYPRE_Int, max_cached_bytes::Csize_t)::HYPRE_Int
 end
 
-function HYPRE_SetSpGemmUseCusparse(use_cusparse)
-    return @ccall libHYPRE.HYPRE_SetSpGemmUseCusparse(use_cusparse::HYPRE_Int)::HYPRE_Int
+function HYPRE_SetLogLevel(log_level)
+    return @ccall libHYPRE.HYPRE_SetLogLevel(log_level::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_SetSpTransUseVendor(use_vendor)
+    return @ccall libHYPRE.HYPRE_SetSpTransUseVendor(use_vendor::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_SetSpMVUseVendor(use_vendor)
+    return @ccall libHYPRE.HYPRE_SetSpMVUseVendor(use_vendor::HYPRE_Int)::HYPRE_Int
 end
 
 function HYPRE_SetUseGpuRand(use_curand)
     return @ccall libHYPRE.HYPRE_SetUseGpuRand(use_curand::HYPRE_Int)::HYPRE_Int
 end
+
+function HYPRE_SetGpuAwareMPI(use_gpu_aware_mpi)
+    return @ccall libHYPRE.HYPRE_SetGpuAwareMPI(use_gpu_aware_mpi::HYPRE_Int)::HYPRE_Int
+end
+
+mutable struct hypre_Solver_struct end
+
+const HYPRE_Solver = Ptr{hypre_Solver_struct}
+
+mutable struct hypre_Matrix_struct end
+
+const HYPRE_Matrix = Ptr{hypre_Matrix_struct}
+
+mutable struct hypre_Vector_struct end
+
+const HYPRE_Vector = Ptr{hypre_Vector_struct}
+
+# typedef HYPRE_Int ( * HYPRE_PtrToSolverFcn ) ( HYPRE_Solver , HYPRE_Matrix , HYPRE_Vector , HYPRE_Vector )
+const HYPRE_PtrToSolverFcn = Ptr{Cvoid}
+
+# typedef HYPRE_Int ( * HYPRE_PtrToDestroyFcn ) ( HYPRE_Solver )
+const HYPRE_PtrToDestroyFcn = Ptr{Cvoid}
 
 mutable struct hypre_IJMatrix_struct end
 
@@ -227,6 +306,14 @@ function HYPRE_IJMatrixGetValues(matrix, nrows, ncols, rows, cols, values)
     return @ccall libHYPRE.HYPRE_IJMatrixGetValues(matrix::HYPRE_IJMatrix, nrows::HYPRE_Int, ncols::Ptr{HYPRE_Int}, rows::Ptr{HYPRE_BigInt}, cols::Ptr{HYPRE_BigInt}, values::Ptr{HYPRE_Complex})::HYPRE_Int
 end
 
+function HYPRE_IJMatrixGetValues2(matrix, nrows, ncols, rows, row_indexes, cols, values)
+    return @ccall libHYPRE.HYPRE_IJMatrixGetValues2(matrix::HYPRE_IJMatrix, nrows::HYPRE_Int, ncols::Ptr{HYPRE_Int}, rows::Ptr{HYPRE_BigInt}, row_indexes::Ptr{HYPRE_Int}, cols::Ptr{HYPRE_BigInt}, values::Ptr{HYPRE_Complex})::HYPRE_Int
+end
+
+function HYPRE_IJMatrixGetValuesAndZeroOut(matrix, nrows, ncols, rows, row_indexes, cols, values)
+    return @ccall libHYPRE.HYPRE_IJMatrixGetValuesAndZeroOut(matrix::HYPRE_IJMatrix, nrows::HYPRE_Int, ncols::Ptr{HYPRE_Int}, rows::Ptr{HYPRE_BigInt}, row_indexes::Ptr{HYPRE_Int}, cols::Ptr{HYPRE_BigInt}, values::Ptr{HYPRE_Complex})::HYPRE_Int
+end
+
 function HYPRE_IJMatrixSetObjectType(matrix, type)
     return @ccall libHYPRE.HYPRE_IJMatrixSetObjectType(matrix::HYPRE_IJMatrix, type::HYPRE_Int)::HYPRE_Int
 end
@@ -237,6 +324,10 @@ end
 
 function HYPRE_IJMatrixGetLocalRange(matrix, ilower, iupper, jlower, jupper)
     return @ccall libHYPRE.HYPRE_IJMatrixGetLocalRange(matrix::HYPRE_IJMatrix, ilower::Ptr{HYPRE_BigInt}, iupper::Ptr{HYPRE_BigInt}, jlower::Ptr{HYPRE_BigInt}, jupper::Ptr{HYPRE_BigInt})::HYPRE_Int
+end
+
+function HYPRE_IJMatrixGetGlobalInfo(matrix, global_num_rows, global_num_cols, global_num_nonzeros)
+    return @ccall libHYPRE.HYPRE_IJMatrixGetGlobalInfo(matrix::HYPRE_IJMatrix, global_num_rows::Ptr{HYPRE_BigInt}, global_num_cols::Ptr{HYPRE_BigInt}, global_num_nonzeros::Ptr{HYPRE_BigInt})::HYPRE_Int
 end
 
 function HYPRE_IJMatrixGetObject(matrix, object)
@@ -255,6 +346,18 @@ function HYPRE_IJMatrixSetMaxOffProcElmts(matrix, max_off_proc_elmts)
     return @ccall libHYPRE.HYPRE_IJMatrixSetMaxOffProcElmts(matrix::HYPRE_IJMatrix, max_off_proc_elmts::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_IJMatrixSetInitAllocation(matrix, factor)
+    return @ccall libHYPRE.HYPRE_IJMatrixSetInitAllocation(matrix::HYPRE_IJMatrix, factor::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_IJMatrixSetEarlyAssemble(matrix, early_assemble)
+    return @ccall libHYPRE.HYPRE_IJMatrixSetEarlyAssemble(matrix::HYPRE_IJMatrix, early_assemble::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_IJMatrixSetGrowFactor(matrix, factor)
+    return @ccall libHYPRE.HYPRE_IJMatrixSetGrowFactor(matrix::HYPRE_IJMatrix, factor::HYPRE_Real)::HYPRE_Int
+end
+
 function HYPRE_IJMatrixSetPrintLevel(matrix, print_level)
     return @ccall libHYPRE.HYPRE_IJMatrixSetPrintLevel(matrix::HYPRE_IJMatrix, print_level::HYPRE_Int)::HYPRE_Int
 end
@@ -267,8 +370,40 @@ function HYPRE_IJMatrixRead(filename, comm, type, matrix)
     return @ccall libHYPRE.HYPRE_IJMatrixRead(filename::Ptr{Cchar}, comm::MPI_Comm, type::HYPRE_Int, matrix::Ptr{HYPRE_IJMatrix})::HYPRE_Int
 end
 
+function HYPRE_IJMatrixReadMM(filename, comm, type, matrix)
+    return @ccall libHYPRE.HYPRE_IJMatrixReadMM(filename::Ptr{Cchar}, comm::MPI_Comm, type::HYPRE_Int, matrix::Ptr{HYPRE_IJMatrix})::HYPRE_Int
+end
+
 function HYPRE_IJMatrixPrint(matrix, filename)
     return @ccall libHYPRE.HYPRE_IJMatrixPrint(matrix::HYPRE_IJMatrix, filename::Ptr{Cchar})::HYPRE_Int
+end
+
+function HYPRE_IJMatrixTranspose(matrix_A, matrix_AT)
+    return @ccall libHYPRE.HYPRE_IJMatrixTranspose(matrix_A::HYPRE_IJMatrix, matrix_AT::Ptr{HYPRE_IJMatrix})::HYPRE_Int
+end
+
+function HYPRE_IJMatrixNorm(matrix, norm)
+    return @ccall libHYPRE.HYPRE_IJMatrixNorm(matrix::HYPRE_IJMatrix, norm::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
+function HYPRE_IJMatrixAdd(alpha, matrix_A, beta, matrix_B, matrix_C)
+    return @ccall libHYPRE.HYPRE_IJMatrixAdd(alpha::HYPRE_Complex, matrix_A::HYPRE_IJMatrix, beta::HYPRE_Complex, matrix_B::HYPRE_IJMatrix, matrix_C::Ptr{HYPRE_IJMatrix})::HYPRE_Int
+end
+
+function HYPRE_IJMatrixPrintBinary(matrix, filename)
+    return @ccall libHYPRE.HYPRE_IJMatrixPrintBinary(matrix::HYPRE_IJMatrix, filename::Ptr{Cchar})::HYPRE_Int
+end
+
+function HYPRE_IJMatrixReadBinary(filename, comm, type, matrix_ptr)
+    return @ccall libHYPRE.HYPRE_IJMatrixReadBinary(filename::Ptr{Cchar}, comm::MPI_Comm, type::HYPRE_Int, matrix_ptr::Ptr{HYPRE_IJMatrix})::HYPRE_Int
+end
+
+function HYPRE_IJMatrixMigrate(matrix, memory_location)
+    return @ccall libHYPRE.HYPRE_IJMatrixMigrate(matrix::HYPRE_IJMatrix, memory_location::HYPRE_MemoryLocation)::HYPRE_Int
+end
+
+function HYPRE_IJMatrixPartialClone(matrix_in, matrix_out)
+    return @ccall libHYPRE.HYPRE_IJMatrixPartialClone(matrix_in::HYPRE_IJMatrix, matrix_out::Ptr{HYPRE_IJMatrix})::HYPRE_Int
 end
 
 mutable struct hypre_IJVector_struct end
@@ -283,6 +418,18 @@ function HYPRE_IJVectorDestroy(vector)
     return @ccall libHYPRE.HYPRE_IJVectorDestroy(vector::HYPRE_IJVector)::HYPRE_Int
 end
 
+function HYPRE_IJVectorInitializeShell(vector)
+    return @ccall libHYPRE.HYPRE_IJVectorInitializeShell(vector::HYPRE_IJVector)::HYPRE_Int
+end
+
+function HYPRE_IJVectorSetData(vector, data)
+    return @ccall libHYPRE.HYPRE_IJVectorSetData(vector::HYPRE_IJVector, data::Ptr{HYPRE_Complex})::HYPRE_Int
+end
+
+function HYPRE_IJVectorSetTags(vector, owns_tags, num_tags, tags)
+    return @ccall libHYPRE.HYPRE_IJVectorSetTags(vector::HYPRE_IJVector, owns_tags::HYPRE_Int, num_tags::HYPRE_Int, tags::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_IJVectorInitialize(vector)
     return @ccall libHYPRE.HYPRE_IJVectorInitialize(vector::HYPRE_IJVector)::HYPRE_Int
 end
@@ -295,8 +442,20 @@ function HYPRE_IJVectorSetMaxOffProcElmts(vector, max_off_proc_elmts)
     return @ccall libHYPRE.HYPRE_IJVectorSetMaxOffProcElmts(vector::HYPRE_IJVector, max_off_proc_elmts::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_IJVectorSetNumComponents(vector, num_components)
+    return @ccall libHYPRE.HYPRE_IJVectorSetNumComponents(vector::HYPRE_IJVector, num_components::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_IJVectorSetComponent(vector, component)
+    return @ccall libHYPRE.HYPRE_IJVectorSetComponent(vector::HYPRE_IJVector, component::HYPRE_Int)::HYPRE_Int
+end
+
 function HYPRE_IJVectorSetValues(vector, nvalues, indices, values)
     return @ccall libHYPRE.HYPRE_IJVectorSetValues(vector::HYPRE_IJVector, nvalues::HYPRE_Int, indices::Ptr{HYPRE_BigInt}, values::Ptr{HYPRE_Complex})::HYPRE_Int
+end
+
+function HYPRE_IJVectorSetConstantValues(vector, value)
+    return @ccall libHYPRE.HYPRE_IJVectorSetConstantValues(vector::HYPRE_IJVector, value::HYPRE_Complex)::HYPRE_Int
 end
 
 function HYPRE_IJVectorAddToValues(vector, nvalues, indices, values)
@@ -305,6 +464,10 @@ end
 
 function HYPRE_IJVectorAssemble(vector)
     return @ccall libHYPRE.HYPRE_IJVectorAssemble(vector::HYPRE_IJVector)::HYPRE_Int
+end
+
+function HYPRE_IJVectorUpdateValues(vector, nvalues, indices, values, action)
+    return @ccall libHYPRE.HYPRE_IJVectorUpdateValues(vector::HYPRE_IJVector, nvalues::HYPRE_Int, indices::Ptr{HYPRE_BigInt}, values::Ptr{HYPRE_Complex}, action::HYPRE_Int)::HYPRE_Int
 end
 
 function HYPRE_IJVectorGetValues(vector, nvalues, indices, values)
@@ -335,8 +498,24 @@ function HYPRE_IJVectorRead(filename, comm, type, vector)
     return @ccall libHYPRE.HYPRE_IJVectorRead(filename::Ptr{Cchar}, comm::MPI_Comm, type::HYPRE_Int, vector::Ptr{HYPRE_IJVector})::HYPRE_Int
 end
 
+function HYPRE_IJVectorReadBinary(filename, comm, type, vector)
+    return @ccall libHYPRE.HYPRE_IJVectorReadBinary(filename::Ptr{Cchar}, comm::MPI_Comm, type::HYPRE_Int, vector::Ptr{HYPRE_IJVector})::HYPRE_Int
+end
+
 function HYPRE_IJVectorPrint(vector, filename)
     return @ccall libHYPRE.HYPRE_IJVectorPrint(vector::HYPRE_IJVector, filename::Ptr{Cchar})::HYPRE_Int
+end
+
+function HYPRE_IJVectorPrintBinary(vector, filename)
+    return @ccall libHYPRE.HYPRE_IJVectorPrintBinary(vector::HYPRE_IJVector, filename::Ptr{Cchar})::HYPRE_Int
+end
+
+function HYPRE_IJVectorInnerProd(x, y, prod)
+    return @ccall libHYPRE.HYPRE_IJVectorInnerProd(x::HYPRE_IJVector, y::HYPRE_IJVector, prod::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
+function HYPRE_IJVectorMigrate(vector, memory_location)
+    return @ccall libHYPRE.HYPRE_IJVectorMigrate(vector::HYPRE_IJVector, memory_location::HYPRE_MemoryLocation)::HYPRE_Int
 end
 
 mutable struct hypre_CSRMatrix_struct end
@@ -350,10 +529,6 @@ const HYPRE_MappedMatrix = Ptr{hypre_MappedMatrix_struct}
 mutable struct hypre_MultiblockMatrix_struct end
 
 const HYPRE_MultiblockMatrix = Ptr{hypre_MultiblockMatrix_struct}
-
-mutable struct hypre_Vector_struct end
-
-const HYPRE_Vector = Ptr{hypre_Vector_struct}
 
 function HYPRE_CSRMatrixCreate(num_rows, num_cols, row_sizes)
     return @ccall libHYPRE.HYPRE_CSRMatrixCreate(num_rows::HYPRE_Int, num_cols::HYPRE_Int, row_sizes::Ptr{HYPRE_Int})::HYPRE_CSRMatrix
@@ -475,6 +650,10 @@ function HYPRE_VectorRead(file_name)
     return @ccall libHYPRE.HYPRE_VectorRead(file_name::Ptr{Cchar})::HYPRE_Vector
 end
 
+function HYPRE_VectorCopy(xvec, yvec)
+    return @ccall libHYPRE.HYPRE_VectorCopy(xvec::HYPRE_Vector, yvec::HYPRE_Vector)::HYPRE_Int
+end
+
 @cenum HYPRE_TimerID::UInt32 begin
     HYPRE_TIMER_ID_MATVEC = 0
     HYPRE_TIMER_ID_BLAS1 = 1
@@ -500,12 +679,12 @@ end
     HYPRE_TIMER_ID_BEXT_S = 21
     HYPRE_TIMER_ID_RENUMBER_COLIDX_RAP = 22
     HYPRE_TIMER_ID_MERGE = 23
-    HYPRE_TIMER_ID_SPMM_ROWNNZ = 24
-    HYPRE_TIMER_ID_SPMM_ATTEMPT1 = 25
-    HYPRE_TIMER_ID_SPMM_ATTEMPT2 = 26
-    HYPRE_TIMER_ID_SPMM_SYMBOLIC = 27
-    HYPRE_TIMER_ID_SPMM_NUMERIC = 28
-    HYPRE_TIMER_ID_SPMM = 29
+    HYPRE_TIMER_ID_SPGEMM_ROWNNZ = 24
+    HYPRE_TIMER_ID_SPGEMM_ATTEMPT1 = 25
+    HYPRE_TIMER_ID_SPGEMM_ATTEMPT2 = 26
+    HYPRE_TIMER_ID_SPGEMM_SYMBOLIC = 27
+    HYPRE_TIMER_ID_SPGEMM_NUMERIC = 28
+    HYPRE_TIMER_ID_SPGEMM = 29
     HYPRE_TIMER_ID_SPADD = 30
     HYPRE_TIMER_ID_SPTRANS = 31
     HYPRE_TIMER_ID_COUNT = 32
@@ -514,10 +693,6 @@ end
 mutable struct hypre_ParCSRMatrix_struct end
 
 const HYPRE_ParCSRMatrix = Ptr{hypre_ParCSRMatrix_struct}
-
-mutable struct hypre_ParVector_struct end
-
-const HYPRE_ParVector = Ptr{hypre_ParVector_struct}
 
 function HYPRE_ParCSRMatrixCreate(comm, global_num_rows, global_num_cols, row_starts, col_starts, num_cols_offd, num_nonzeros_diag, num_nonzeros_offd, matrix)
     return @ccall libHYPRE.HYPRE_ParCSRMatrixCreate(comm::MPI_Comm, global_num_rows::HYPRE_BigInt, global_num_cols::HYPRE_BigInt, row_starts::Ptr{HYPRE_BigInt}, col_starts::Ptr{HYPRE_BigInt}, num_cols_offd::HYPRE_Int, num_nonzeros_diag::HYPRE_Int, num_nonzeros_offd::HYPRE_Int, matrix::Ptr{HYPRE_ParCSRMatrix})::HYPRE_Int
@@ -551,6 +726,10 @@ function HYPRE_ParCSRMatrixGetRowPartitioning(matrix, row_partitioning_ptr)
     return @ccall libHYPRE.HYPRE_ParCSRMatrixGetRowPartitioning(matrix::HYPRE_ParCSRMatrix, row_partitioning_ptr::Ptr{Ptr{HYPRE_BigInt}})::HYPRE_Int
 end
 
+function HYPRE_ParCSRMatrixGetGlobalRowPartitioning(matrix, all_procs, row_partitioning_ptr)
+    return @ccall libHYPRE.HYPRE_ParCSRMatrixGetGlobalRowPartitioning(matrix::HYPRE_ParCSRMatrix, all_procs::HYPRE_Int, row_partitioning_ptr::Ptr{Ptr{HYPRE_BigInt}})::HYPRE_Int
+end
+
 function HYPRE_ParCSRMatrixGetColPartitioning(matrix, col_partitioning_ptr)
     return @ccall libHYPRE.HYPRE_ParCSRMatrixGetColPartitioning(matrix::HYPRE_ParCSRMatrix, col_partitioning_ptr::Ptr{Ptr{HYPRE_BigInt}})::HYPRE_Int
 end
@@ -571,13 +750,13 @@ function HYPRE_CSRMatrixToParCSRMatrix(comm, A_CSR, row_partitioning, col_partit
     return @ccall libHYPRE.HYPRE_CSRMatrixToParCSRMatrix(comm::MPI_Comm, A_CSR::HYPRE_CSRMatrix, row_partitioning::Ptr{HYPRE_BigInt}, col_partitioning::Ptr{HYPRE_BigInt}, matrix::Ptr{HYPRE_ParCSRMatrix})::HYPRE_Int
 end
 
-function HYPRE_ParCSRMatrixMatvec(alpha, A, x, beta, y)
-    return @ccall libHYPRE.HYPRE_ParCSRMatrixMatvec(alpha::HYPRE_Complex, A::HYPRE_ParCSRMatrix, x::HYPRE_ParVector, beta::HYPRE_Complex, y::HYPRE_ParVector)::HYPRE_Int
+function HYPRE_CSRMatrixToParCSRMatrix_WithNewPartitioning(comm, A_CSR, matrix)
+    return @ccall libHYPRE.HYPRE_CSRMatrixToParCSRMatrix_WithNewPartitioning(comm::MPI_Comm, A_CSR::HYPRE_CSRMatrix, matrix::Ptr{HYPRE_ParCSRMatrix})::HYPRE_Int
 end
 
-function HYPRE_ParCSRMatrixMatvecT(alpha, A, x, beta, y)
-    return @ccall libHYPRE.HYPRE_ParCSRMatrixMatvecT(alpha::HYPRE_Complex, A::HYPRE_ParCSRMatrix, x::HYPRE_ParVector, beta::HYPRE_Complex, y::HYPRE_ParVector)::HYPRE_Int
-end
+mutable struct hypre_ParVector_struct end
+
+const HYPRE_ParVector = Ptr{hypre_ParVector_struct}
 
 function HYPRE_ParVectorCreate(comm, global_size, partitioning, vector)
     return @ccall libHYPRE.HYPRE_ParVectorCreate(comm::MPI_Comm, global_size::HYPRE_BigInt, partitioning::Ptr{HYPRE_BigInt}, vector::Ptr{HYPRE_ParVector})::HYPRE_Int
@@ -599,12 +778,24 @@ function HYPRE_ParVectorPrint(vector, file_name)
     return @ccall libHYPRE.HYPRE_ParVectorPrint(vector::HYPRE_ParVector, file_name::Ptr{Cchar})::HYPRE_Int
 end
 
+function HYPRE_ParMultiVectorCreate(comm, global_size, partitioning, number_vectors, vector)
+    return @ccall libHYPRE.HYPRE_ParMultiVectorCreate(comm::MPI_Comm, global_size::HYPRE_BigInt, partitioning::Ptr{HYPRE_BigInt}, number_vectors::HYPRE_Int, vector::Ptr{HYPRE_ParVector})::HYPRE_Int
+end
+
+function HYPRE_ParVectorPrintBinaryIJ(vector, file_name)
+    return @ccall libHYPRE.HYPRE_ParVectorPrintBinaryIJ(vector::HYPRE_ParVector, file_name::Ptr{Cchar})::HYPRE_Int
+end
+
 function HYPRE_ParVectorSetConstantValues(vector, value)
     return @ccall libHYPRE.HYPRE_ParVectorSetConstantValues(vector::HYPRE_ParVector, value::HYPRE_Complex)::HYPRE_Int
 end
 
 function HYPRE_ParVectorSetRandomValues(vector, seed)
     return @ccall libHYPRE.HYPRE_ParVectorSetRandomValues(vector::HYPRE_ParVector, seed::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_ParVectorCloneShallow(x)
+    return @ccall libHYPRE.HYPRE_ParVectorCloneShallow(x::HYPRE_ParVector)::HYPRE_ParVector
 end
 
 function HYPRE_ParVectorCopy(x, y)
@@ -615,8 +806,32 @@ function HYPRE_ParVectorScale(value, x)
     return @ccall libHYPRE.HYPRE_ParVectorScale(value::HYPRE_Complex, x::HYPRE_ParVector)::HYPRE_Int
 end
 
-function HYPRE_ParVectorInnerProd(x, y, prod)
-    return @ccall libHYPRE.HYPRE_ParVectorInnerProd(x::HYPRE_ParVector, y::HYPRE_ParVector, prod::Ptr{HYPRE_Real})::HYPRE_Int
+function HYPRE_ParVectorAxpy(alpha, x, y)
+    return @ccall libHYPRE.HYPRE_ParVectorAxpy(alpha::HYPRE_Complex, x::HYPRE_ParVector, y::HYPRE_ParVector)::HYPRE_Int
+end
+
+function HYPRE_ParVectorInnerProd(x, y, result)
+    return @ccall libHYPRE.HYPRE_ParVectorInnerProd(x::HYPRE_ParVector, y::HYPRE_ParVector, result::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
+function HYPRE_ParCSRMatrixMatvec(alpha, A, x, beta, y)
+    return @ccall libHYPRE.HYPRE_ParCSRMatrixMatvec(alpha::HYPRE_Complex, A::HYPRE_ParCSRMatrix, x::HYPRE_ParVector, beta::HYPRE_Complex, y::HYPRE_ParVector)::HYPRE_Int
+end
+
+function HYPRE_ParCSRMatrixMatvecT(alpha, A, x, beta, y)
+    return @ccall libHYPRE.HYPRE_ParCSRMatrixMatvecT(alpha::HYPRE_Complex, A::HYPRE_ParCSRMatrix, x::HYPRE_ParVector, beta::HYPRE_Complex, y::HYPRE_ParVector)::HYPRE_Int
+end
+
+function HYPRE_ParCSRMatrixMatmat(A, B, C)
+    return @ccall libHYPRE.HYPRE_ParCSRMatrixMatmat(A::HYPRE_ParCSRMatrix, B::HYPRE_ParCSRMatrix, C::Ptr{HYPRE_ParCSRMatrix})::HYPRE_Int
+end
+
+function HYPRE_ParCSRMatrixDiagScale(A, left, right)
+    return @ccall libHYPRE.HYPRE_ParCSRMatrixDiagScale(A::HYPRE_ParCSRMatrix, left::HYPRE_ParVector, right::HYPRE_ParVector)::HYPRE_Int
+end
+
+function HYPRE_ParCSRMatrixComputeScalingTagged(A, type, memloc_tags, num_tags, tags, scaling_ptr)
+    return @ccall libHYPRE.HYPRE_ParCSRMatrixComputeScalingTagged(A::HYPRE_ParCSRMatrix, type::HYPRE_Int, memloc_tags::HYPRE_MemoryLocation, num_tags::HYPRE_Int, tags::Ptr{HYPRE_Int}, scaling_ptr::Ptr{HYPRE_ParVector})::HYPRE_Int
 end
 
 function HYPRE_VectorToParVector(comm, b, partitioning, vector)
@@ -626,17 +841,6 @@ end
 function HYPRE_ParVectorGetValues(vector, num_values, indices, values)
     return @ccall libHYPRE.HYPRE_ParVectorGetValues(vector::HYPRE_ParVector, num_values::HYPRE_Int, indices::Ptr{HYPRE_BigInt}, values::Ptr{HYPRE_Complex})::HYPRE_Int
 end
-
-mutable struct hypre_Solver_struct end
-
-const HYPRE_Solver = Ptr{hypre_Solver_struct}
-
-mutable struct hypre_Matrix_struct end
-
-const HYPRE_Matrix = Ptr{hypre_Matrix_struct}
-
-# typedef HYPRE_Int ( * HYPRE_PtrToSolverFcn ) ( HYPRE_Solver , HYPRE_Matrix , HYPRE_Vector , HYPRE_Vector )
-const HYPRE_PtrToSolverFcn = Ptr{Cvoid}
 
 # typedef HYPRE_Int ( * HYPRE_PtrToModifyPCFcn ) ( HYPRE_Solver , HYPRE_Int , HYPRE_Real )
 const HYPRE_PtrToModifyPCFcn = Ptr{Cvoid}
@@ -693,8 +897,24 @@ function HYPRE_PCGSetRecomputeResidualP(solver, recompute_residual_p)
     return @ccall libHYPRE.HYPRE_PCGSetRecomputeResidualP(solver::HYPRE_Solver, recompute_residual_p::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_PCGSetFlex(solver, flex)
+    return @ccall libHYPRE.HYPRE_PCGSetFlex(solver::HYPRE_Solver, flex::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_PCGSetSkipBreak(solver, skip_break)
+    return @ccall libHYPRE.HYPRE_PCGSetSkipBreak(solver::HYPRE_Solver, skip_break::HYPRE_Int)::HYPRE_Int
+end
+
 function HYPRE_PCGSetPrecond(solver, precond, precond_setup, precond_solver)
     return @ccall libHYPRE.HYPRE_PCGSetPrecond(solver::HYPRE_Solver, precond::HYPRE_PtrToSolverFcn, precond_setup::HYPRE_PtrToSolverFcn, precond_solver::HYPRE_Solver)::HYPRE_Int
+end
+
+function HYPRE_PCGSetPrecondMatrix(solver, precond_matrix)
+    return @ccall libHYPRE.HYPRE_PCGSetPrecondMatrix(solver::HYPRE_Solver, precond_matrix::HYPRE_Matrix)::HYPRE_Int
+end
+
+function HYPRE_PCGSetPreconditioner(solver, precond)
+    return @ccall libHYPRE.HYPRE_PCGSetPreconditioner(solver::HYPRE_Solver, precond::HYPRE_Solver)::HYPRE_Int
 end
 
 function HYPRE_PCGSetLogging(solver, logging)
@@ -749,16 +969,24 @@ function HYPRE_PCGGetRelChange(solver, rel_change)
     return @ccall libHYPRE.HYPRE_PCGGetRelChange(solver::HYPRE_Solver, rel_change::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
-function HYPRE_GMRESGetSkipRealResidualCheck(solver, skip_real_r_check)
-    return @ccall libHYPRE.HYPRE_GMRESGetSkipRealResidualCheck(solver::HYPRE_Solver, skip_real_r_check::Ptr{HYPRE_Int})::HYPRE_Int
+function HYPRE_PCGGetSkipBreak(solver, skip_break)
+    return @ccall libHYPRE.HYPRE_PCGGetSkipBreak(solver::HYPRE_Solver, skip_break::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_PCGGetFlex(solver, flex)
+    return @ccall libHYPRE.HYPRE_PCGGetFlex(solver::HYPRE_Solver, flex::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_PCGGetPrecond(solver, precond_data_ptr)
     return @ccall libHYPRE.HYPRE_PCGGetPrecond(solver::HYPRE_Solver, precond_data_ptr::Ptr{HYPRE_Solver})::HYPRE_Int
 end
 
-function HYPRE_PCGGetLogging(solver, level)
-    return @ccall libHYPRE.HYPRE_PCGGetLogging(solver::HYPRE_Solver, level::Ptr{HYPRE_Int})::HYPRE_Int
+function HYPRE_PCGGetPrecondMatrix(solver, precond_matrix_ptr)
+    return @ccall libHYPRE.HYPRE_PCGGetPrecondMatrix(solver::HYPRE_Solver, precond_matrix_ptr::Ptr{HYPRE_Matrix})::HYPRE_Int
+end
+
+function HYPRE_PCGGetLogging(solver, logging)
+    return @ccall libHYPRE.HYPRE_PCGGetLogging(solver::HYPRE_Solver, logging::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_PCGGetPrintLevel(solver, level)
@@ -817,6 +1045,10 @@ function HYPRE_GMRESSetPrecond(solver, precond, precond_setup, precond_solver)
     return @ccall libHYPRE.HYPRE_GMRESSetPrecond(solver::HYPRE_Solver, precond::HYPRE_PtrToSolverFcn, precond_setup::HYPRE_PtrToSolverFcn, precond_solver::HYPRE_Solver)::HYPRE_Int
 end
 
+function HYPRE_GMRESSetPrecondMatrix(solver, precond_matrix)
+    return @ccall libHYPRE.HYPRE_GMRESSetPrecondMatrix(solver::HYPRE_Solver, precond_matrix::HYPRE_Matrix)::HYPRE_Int
+end
+
 function HYPRE_GMRESSetLogging(solver, logging)
     return @ccall libHYPRE.HYPRE_GMRESSetLogging(solver::HYPRE_Solver, logging::HYPRE_Int)::HYPRE_Int
 end
@@ -835,6 +1067,10 @@ end
 
 function HYPRE_GMRESGetResidual(solver, residual)
     return @ccall libHYPRE.HYPRE_GMRESGetResidual(solver::HYPRE_Solver, residual::Ptr{Cvoid})::HYPRE_Int
+end
+
+function HYPRE_GMRESGetSkipRealResidualCheck(solver, skip_real_r_check)
+    return @ccall libHYPRE.HYPRE_GMRESGetSkipRealResidualCheck(solver::HYPRE_Solver, skip_real_r_check::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_GMRESGetTol(solver, tol)
@@ -873,6 +1109,10 @@ function HYPRE_GMRESGetPrecond(solver, precond_data_ptr)
     return @ccall libHYPRE.HYPRE_GMRESGetPrecond(solver::HYPRE_Solver, precond_data_ptr::Ptr{HYPRE_Solver})::HYPRE_Int
 end
 
+function HYPRE_GMRESGetPrecondMatrix(solver, precond_matrix_ptr)
+    return @ccall libHYPRE.HYPRE_GMRESGetPrecondMatrix(solver::HYPRE_Solver, precond_matrix_ptr::Ptr{HYPRE_Matrix})::HYPRE_Int
+end
+
 function HYPRE_GMRESGetLogging(solver, level)
     return @ccall libHYPRE.HYPRE_GMRESGetLogging(solver::HYPRE_Solver, level::Ptr{HYPRE_Int})::HYPRE_Int
 end
@@ -883,6 +1123,14 @@ end
 
 function HYPRE_GMRESGetConverged(solver, converged)
     return @ccall libHYPRE.HYPRE_GMRESGetConverged(solver::HYPRE_Solver, converged::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_GMRESSetRefSolution(solver, xref)
+    return @ccall libHYPRE.HYPRE_GMRESSetRefSolution(solver::HYPRE_Solver, xref::HYPRE_Vector)::HYPRE_Int
+end
+
+function HYPRE_GMRESGetRefSolution(solver, xref)
+    return @ccall libHYPRE.HYPRE_GMRESGetRefSolution(solver::HYPRE_Solver, xref::Ptr{HYPRE_Vector})::HYPRE_Int
 end
 
 function HYPRE_FlexGMRESSetup(solver, A, b, x)
@@ -1241,6 +1489,10 @@ function HYPRE_BiCGSTABSetPrecond(solver, precond, precond_setup, precond_solver
     return @ccall libHYPRE.HYPRE_BiCGSTABSetPrecond(solver::HYPRE_Solver, precond::HYPRE_PtrToSolverFcn, precond_setup::HYPRE_PtrToSolverFcn, precond_solver::HYPRE_Solver)::HYPRE_Int
 end
 
+function HYPRE_BiCGSTABSetPrecondMatrix(solver, precond_matrix)
+    return @ccall libHYPRE.HYPRE_BiCGSTABSetPrecondMatrix(solver::HYPRE_Solver, precond_matrix::HYPRE_Matrix)::HYPRE_Int
+end
+
 function HYPRE_BiCGSTABSetLogging(solver, logging)
     return @ccall libHYPRE.HYPRE_BiCGSTABSetLogging(solver::HYPRE_Solver, logging::HYPRE_Int)::HYPRE_Int
 end
@@ -1263,6 +1515,10 @@ end
 
 function HYPRE_BiCGSTABGetPrecond(solver, precond_data_ptr)
     return @ccall libHYPRE.HYPRE_BiCGSTABGetPrecond(solver::HYPRE_Solver, precond_data_ptr::Ptr{HYPRE_Solver})::HYPRE_Int
+end
+
+function HYPRE_BiCGSTABGetPrecondMatrix(solver, precond_matrix_ptr)
+    return @ccall libHYPRE.HYPRE_BiCGSTABGetPrecondMatrix(solver::HYPRE_Solver, precond_matrix_ptr::Ptr{HYPRE_Matrix})::HYPRE_Int
 end
 
 function HYPRE_CGNRDestroy(solver)
@@ -1329,8 +1585,8 @@ function utilities_FortranMatrixAllocateData(h, w, mtx)
     return @ccall libHYPRE.utilities_FortranMatrixAllocateData(h::HYPRE_BigInt, w::HYPRE_BigInt, mtx::Ptr{utilities_FortranMatrix})::Cvoid
 end
 
-function utilities_FortranMatrixWrap(arg1, gh, h, w, mtx)
-    return @ccall libHYPRE.utilities_FortranMatrixWrap(arg1::Ptr{HYPRE_Real}, gh::HYPRE_BigInt, h::HYPRE_BigInt, w::HYPRE_BigInt, mtx::Ptr{utilities_FortranMatrix})::Cvoid
+function utilities_FortranMatrixWrap(v, gh, h, w, mtx)
+    return @ccall libHYPRE.utilities_FortranMatrixWrap(v::Ptr{HYPRE_Real}, gh::HYPRE_BigInt, h::HYPRE_BigInt, w::HYPRE_BigInt, mtx::Ptr{utilities_FortranMatrix})::Cvoid
 end
 
 function utilities_FortranMatrixDestroy(mtx)
@@ -1514,7 +1770,7 @@ function mv_MultiVectorAxpy(a, x, y)
 end
 
 function mv_MultiVectorByMultiVector(x, y, gh, h, w, v)
-    return @ccall libHYPRE.mv_MultiVectorByMultiVector(x::mv_MultiVectorPtr, y::mv_MultiVectorPtr, gh::HYPRE_Int, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Real})::Cvoid
+    return @ccall libHYPRE.mv_MultiVectorByMultiVector(x::mv_MultiVectorPtr, y::mv_MultiVectorPtr, gh::HYPRE_BigInt, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Real})::Cvoid
 end
 
 function mv_MultiVectorByMultiVectorDiag(arg1, arg2, mask, n, diag)
@@ -1522,11 +1778,11 @@ function mv_MultiVectorByMultiVectorDiag(arg1, arg2, mask, n, diag)
 end
 
 function mv_MultiVectorByMatrix(x, gh, h, w, v, y)
-    return @ccall libHYPRE.mv_MultiVectorByMatrix(x::mv_MultiVectorPtr, gh::HYPRE_Int, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Complex}, y::mv_MultiVectorPtr)::Cvoid
+    return @ccall libHYPRE.mv_MultiVectorByMatrix(x::mv_MultiVectorPtr, gh::HYPRE_BigInt, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Complex}, y::mv_MultiVectorPtr)::Cvoid
 end
 
 function mv_MultiVectorXapy(x, gh, h, w, v, y)
-    return @ccall libHYPRE.mv_MultiVectorXapy(x::mv_MultiVectorPtr, gh::HYPRE_Int, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Complex}, y::mv_MultiVectorPtr)::Cvoid
+    return @ccall libHYPRE.mv_MultiVectorXapy(x::mv_MultiVectorPtr, gh::HYPRE_BigInt, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Complex}, y::mv_MultiVectorPtr)::Cvoid
 end
 
 function mv_MultiVectorByDiagonal(x, mask, n, diag, y)
@@ -1589,7 +1845,7 @@ function mv_TempMultiVectorAxpy(arg1, arg2, arg3)
 end
 
 function mv_TempMultiVectorByMultiVector(arg1, arg2, gh, h, w, v)
-    return @ccall libHYPRE.mv_TempMultiVectorByMultiVector(arg1::Ptr{Cvoid}, arg2::Ptr{Cvoid}, gh::HYPRE_Int, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Complex})::Cvoid
+    return @ccall libHYPRE.mv_TempMultiVectorByMultiVector(arg1::Ptr{Cvoid}, arg2::Ptr{Cvoid}, gh::HYPRE_BigInt, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Complex})::Cvoid
 end
 
 function mv_TempMultiVectorByMultiVectorDiag(x, y, mask, n, diag)
@@ -1597,11 +1853,11 @@ function mv_TempMultiVectorByMultiVectorDiag(x, y, mask, n, diag)
 end
 
 function mv_TempMultiVectorByMatrix(arg1, gh, h, w, v, arg6)
-    return @ccall libHYPRE.mv_TempMultiVectorByMatrix(arg1::Ptr{Cvoid}, gh::HYPRE_Int, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Complex}, arg6::Ptr{Cvoid})::Cvoid
+    return @ccall libHYPRE.mv_TempMultiVectorByMatrix(arg1::Ptr{Cvoid}, gh::HYPRE_BigInt, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Complex}, arg6::Ptr{Cvoid})::Cvoid
 end
 
 function mv_TempMultiVectorXapy(x, gh, h, w, v, y)
-    return @ccall libHYPRE.mv_TempMultiVectorXapy(x::Ptr{Cvoid}, gh::HYPRE_Int, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Complex}, y::Ptr{Cvoid})::Cvoid
+    return @ccall libHYPRE.mv_TempMultiVectorXapy(x::Ptr{Cvoid}, gh::HYPRE_BigInt, h::HYPRE_Int, w::HYPRE_Int, v::Ptr{HYPRE_Complex}, y::Ptr{Cvoid})::Cvoid
 end
 
 function mv_TempMultiVectorByDiagonal(x, mask, n, diag, y)
@@ -1689,14 +1945,6 @@ function HYPRE_LOBPCGIterations(solver)
     return @ccall libHYPRE.HYPRE_LOBPCGIterations(solver::HYPRE_Solver)::HYPRE_Int
 end
 
-function hypre_LOBPCGMultiOperatorB(data, x, y)
-    return @ccall libHYPRE.hypre_LOBPCGMultiOperatorB(data::Ptr{Cvoid}, x::Ptr{Cvoid}, y::Ptr{Cvoid})::Cvoid
-end
-
-function lobpcg_MultiVectorByMultiVector(x, y, xy)
-    return @ccall libHYPRE.lobpcg_MultiVectorByMultiVector(x::mv_MultiVectorPtr, y::mv_MultiVectorPtr, xy::Ptr{utilities_FortranMatrix})::Cvoid
-end
-
 # typedef HYPRE_Int ( * HYPRE_PtrToParSolverFcn ) ( HYPRE_Solver , HYPRE_ParCSRMatrix , HYPRE_ParVector , HYPRE_ParVector )
 const HYPRE_PtrToParSolverFcn = Ptr{Cvoid}
 
@@ -1732,12 +1980,36 @@ function HYPRE_BoomerAMGGetNumIterations(solver, num_iterations)
     return @ccall libHYPRE.HYPRE_BoomerAMGGetNumIterations(solver::HYPRE_Solver, num_iterations::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetCumNumIterations(solver, cum_num_iterations)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetCumNumIterations(solver::HYPRE_Solver, cum_num_iterations::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetCumNnzAP(solver, cum_nnz_AP)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetCumNnzAP(solver::HYPRE_Solver, cum_nnz_AP::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetCumNnzAP(solver, cum_nnz_AP)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetCumNnzAP(solver::HYPRE_Solver, cum_nnz_AP::HYPRE_Real)::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGGetFinalRelativeResidualNorm(solver, rel_resid_norm)
     return @ccall libHYPRE.HYPRE_BoomerAMGGetFinalRelativeResidualNorm(solver::HYPRE_Solver, rel_resid_norm::Ptr{HYPRE_Real})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetNumFunctions(solver, num_functions)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetNumFunctions(solver::HYPRE_Solver, num_functions::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetNumFunctions(solver, num_functions)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetNumFunctions(solver::HYPRE_Solver, num_functions::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetFilterFunctions(solver, filter_functions)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetFilterFunctions(solver::HYPRE_Solver, filter_functions::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetFilterFunctions(solver, filter_functions)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetFilterFunctions(solver::HYPRE_Solver, filter_functions::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetDofFunc(solver, dof_func)
@@ -1748,12 +2020,24 @@ function HYPRE_BoomerAMGSetConvergeType(solver, type)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetConvergeType(solver::HYPRE_Solver, type::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetConvergeType(solver, type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetConvergeType(solver::HYPRE_Solver, type::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetTol(solver, tol)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetTol(solver::HYPRE_Solver, tol::HYPRE_Real)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetTol(solver, tol)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetTol(solver::HYPRE_Solver, tol::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetMaxIter(solver, max_iter)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetMaxIter(solver::HYPRE_Solver, max_iter::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetMaxIter(solver, max_iter)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetMaxIter(solver::HYPRE_Solver, max_iter::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetMinIter(solver, min_iter)
@@ -1764,28 +2048,56 @@ function HYPRE_BoomerAMGSetMaxCoarseSize(solver, max_coarse_size)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetMaxCoarseSize(solver::HYPRE_Solver, max_coarse_size::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetMaxCoarseSize(solver, max_coarse_size)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetMaxCoarseSize(solver::HYPRE_Solver, max_coarse_size::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetMinCoarseSize(solver, min_coarse_size)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetMinCoarseSize(solver::HYPRE_Solver, min_coarse_size::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetMinCoarseSize(solver, min_coarse_size)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetMinCoarseSize(solver::HYPRE_Solver, min_coarse_size::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetMaxLevels(solver, max_levels)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetMaxLevels(solver::HYPRE_Solver, max_levels::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetMaxLevels(solver, max_levels)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetMaxLevels(solver::HYPRE_Solver, max_levels::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetCoarsenCutFactor(solver, coarsen_cut_factor)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetCoarsenCutFactor(solver::HYPRE_Solver, coarsen_cut_factor::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetCoarsenCutFactor(solver, coarsen_cut_factor)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetCoarsenCutFactor(solver::HYPRE_Solver, coarsen_cut_factor::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetStrongThreshold(solver, strong_threshold)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetStrongThreshold(solver::HYPRE_Solver, strong_threshold::HYPRE_Real)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetStrongThreshold(solver, strong_threshold)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetStrongThreshold(solver::HYPRE_Solver, strong_threshold::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetStrongThresholdR(solver, strong_threshold)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetStrongThresholdR(solver::HYPRE_Solver, strong_threshold::HYPRE_Real)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetStrongThresholdR(solver, strong_threshold)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetStrongThresholdR(solver::HYPRE_Solver, strong_threshold::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetFilterThresholdR(solver, filter_threshold)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetFilterThresholdR(solver::HYPRE_Solver, filter_threshold::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetFilterThresholdR(solver, filter_threshold)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetFilterThresholdR(solver::HYPRE_Solver, filter_threshold::Ptr{HYPRE_Real})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetSCommPkgSwitch(solver, S_commpkg_switch)
@@ -1798,6 +2110,10 @@ end
 
 function HYPRE_BoomerAMGSetCoarsenType(solver, coarsen_type)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetCoarsenType(solver::HYPRE_Solver, coarsen_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetCoarsenType(solver, coarsen_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetCoarsenType(solver::HYPRE_Solver, coarsen_type::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetNonGalerkinTol(solver, nongalerkin_tol)
@@ -1814,6 +2130,14 @@ end
 
 function HYPRE_BoomerAMGSetMeasureType(solver, measure_type)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetMeasureType(solver::HYPRE_Solver, measure_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetMeasureType(solver, measure_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetMeasureType(solver::HYPRE_Solver, measure_type::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetSetupType(solver, setup_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetSetupType(solver::HYPRE_Solver, setup_type::HYPRE_Int)::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetAggNumLevels(solver, agg_num_levels)
@@ -1836,6 +2160,10 @@ function HYPRE_BoomerAMGSetNodalDiag(solver, nodal_diag)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetNodalDiag(solver::HYPRE_Solver, nodal_diag::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGSetNodalLevels(solver, nodal_levels)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetNodalLevels(solver::HYPRE_Solver, nodal_levels::HYPRE_Int)::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetKeepSameSign(solver, keep_same_sign)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetKeepSameSign(solver::HYPRE_Solver, keep_same_sign::HYPRE_Int)::HYPRE_Int
 end
@@ -1844,12 +2172,24 @@ function HYPRE_BoomerAMGSetInterpType(solver, interp_type)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetInterpType(solver::HYPRE_Solver, interp_type::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGSetInterpRefine(solver, num_refine)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetInterpRefine(solver::HYPRE_Solver, num_refine::HYPRE_Int)::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetTruncFactor(solver, trunc_factor)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetTruncFactor(solver::HYPRE_Solver, trunc_factor::HYPRE_Real)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetTruncFactor(solver, trunc_factor)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetTruncFactor(solver::HYPRE_Solver, trunc_factor::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetPMaxElmts(solver, P_max_elmts)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetPMaxElmts(solver::HYPRE_Solver, P_max_elmts::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetPMaxElmts(solver, P_max_elmts)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetPMaxElmts(solver::HYPRE_Solver, P_max_elmts::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetSepWeight(solver, sep_weight)
@@ -1884,6 +2224,10 @@ function HYPRE_BoomerAMGSetInterpVecVariant(solver, var)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetInterpVecVariant(solver::HYPRE_Solver, var::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGSetSmoothInterpVectors(solver, smooth_interp_vectors)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetSmoothInterpVectors(solver::HYPRE_Solver, smooth_interp_vectors::HYPRE_Int)::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetInterpVecQMax(solver, q_max)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetInterpVecQMax(solver::HYPRE_Solver, q_max::HYPRE_Int)::HYPRE_Int
 end
@@ -1904,20 +2248,40 @@ function HYPRE_BoomerAMGSetCycleType(solver, cycle_type)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetCycleType(solver::HYPRE_Solver, cycle_type::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetCycleType(solver, cycle_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetCycleType(solver::HYPRE_Solver, cycle_type::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetFCycle(solver, fcycle)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetFCycle(solver::HYPRE_Solver, fcycle::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetFCycle(solver, fcycle)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetFCycle(solver::HYPRE_Solver, fcycle::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetAdditive(solver, addlvl)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetAdditive(solver::HYPRE_Solver, addlvl::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetAdditive(solver, additive)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetAdditive(solver::HYPRE_Solver, additive::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetMultAdditive(solver, addlvl)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetMultAdditive(solver::HYPRE_Solver, addlvl::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetMultAdditive(solver, mult_additive)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetMultAdditive(solver::HYPRE_Solver, mult_additive::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetSimple(solver, addlvl)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetSimple(solver::HYPRE_Solver, addlvl::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetSimple(solver, simple)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetSimple(solver::HYPRE_Solver, simple::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetAddLastLvl(solver, add_last_lvl)
@@ -1936,6 +2300,14 @@ function HYPRE_BoomerAMGSetAddRelaxType(solver, add_rlx_type)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetAddRelaxType(solver::HYPRE_Solver, add_rlx_type::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGSetAddPMaxElmts(solver, add_P_max_elmts)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetAddPMaxElmts(solver::HYPRE_Solver, add_P_max_elmts::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetAddTruncFactor(solver, add_trunc_factor)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetAddTruncFactor(solver::HYPRE_Solver, add_trunc_factor::HYPRE_Real)::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetAddRelaxWt(solver, add_rlx_wt)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetAddRelaxWt(solver::HYPRE_Solver, add_rlx_wt::HYPRE_Real)::HYPRE_Int
 end
@@ -1944,8 +2316,16 @@ function HYPRE_BoomerAMGSetSeqThreshold(solver, seq_threshold)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetSeqThreshold(solver::HYPRE_Solver, seq_threshold::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetSeqThreshold(solver, seq_threshold)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetSeqThreshold(solver::HYPRE_Solver, seq_threshold::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetRedundant(solver, redundant)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetRedundant(solver::HYPRE_Solver, redundant::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetRedundant(solver, redundant)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetRedundant(solver::HYPRE_Solver, redundant::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetNumGridSweeps(solver, num_grid_sweeps)
@@ -1960,6 +2340,10 @@ function HYPRE_BoomerAMGSetCycleNumSweeps(solver, num_sweeps, k)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetCycleNumSweeps(solver::HYPRE_Solver, num_sweeps::HYPRE_Int, k::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetCycleNumSweeps(solver, num_sweeps, k)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetCycleNumSweeps(solver::HYPRE_Solver, num_sweeps::Ptr{HYPRE_Int}, k::HYPRE_Int)::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetGridRelaxType(solver, grid_relax_type)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetGridRelaxType(solver::HYPRE_Solver, grid_relax_type::Ptr{HYPRE_Int})::HYPRE_Int
 end
@@ -1970,6 +2354,10 @@ end
 
 function HYPRE_BoomerAMGSetCycleRelaxType(solver, relax_type, k)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetCycleRelaxType(solver::HYPRE_Solver, relax_type::HYPRE_Int, k::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetCycleRelaxType(solver, relax_type, k)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetCycleRelaxType(solver::HYPRE_Solver, relax_type::Ptr{HYPRE_Int}, k::HYPRE_Int)::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetRelaxOrder(solver, relax_order)
@@ -2028,28 +2416,56 @@ function HYPRE_BoomerAMGSetSmoothType(solver, smooth_type)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetSmoothType(solver::HYPRE_Solver, smooth_type::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetSmoothType(solver, smooth_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetSmoothType(solver::HYPRE_Solver, smooth_type::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetSmoothNumLevels(solver, smooth_num_levels)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetSmoothNumLevels(solver::HYPRE_Solver, smooth_num_levels::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetSmoothNumLevels(solver, smooth_num_levels)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetSmoothNumLevels(solver::HYPRE_Solver, smooth_num_levels::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetSmoothNumSweeps(solver, smooth_num_sweeps)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetSmoothNumSweeps(solver::HYPRE_Solver, smooth_num_sweeps::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetSmoothNumSweeps(solver, smooth_num_sweeps)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetSmoothNumSweeps(solver::HYPRE_Solver, smooth_num_sweeps::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetVariant(solver, variant)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetVariant(solver::HYPRE_Solver, variant::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetVariant(solver, variant)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetVariant(solver::HYPRE_Solver, variant::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetOverlap(solver, overlap)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetOverlap(solver::HYPRE_Solver, overlap::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetOverlap(solver, overlap)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetOverlap(solver::HYPRE_Solver, overlap::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetDomainType(solver, domain_type)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetDomainType(solver::HYPRE_Solver, domain_type::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetDomainType(solver, domain_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetDomainType(solver::HYPRE_Solver, domain_type::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetSchwarzRlxWeight(solver, schwarz_rlx_weight)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetSchwarzRlxWeight(solver::HYPRE_Solver, schwarz_rlx_weight::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetSchwarzRlxWeight(solver, schwarz_rlx_weight)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetSchwarzRlxWeight(solver::HYPRE_Solver, schwarz_rlx_weight::Ptr{HYPRE_Real})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGSetSchwarzUseNonSymm(solver, use_nonsymm)
@@ -2116,6 +2532,74 @@ function HYPRE_BoomerAMGSetILUDroptol(solver, ilu_droptol)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetILUDroptol(solver::HYPRE_Solver, ilu_droptol::HYPRE_Real)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGSetILUTriSolve(solver, ilu_tri_solve)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetILUTriSolve(solver::HYPRE_Solver, ilu_tri_solve::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetILULowerJacobiIters(solver, ilu_lower_jacobi_iters)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetILULowerJacobiIters(solver::HYPRE_Solver, ilu_lower_jacobi_iters::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetILUUpperJacobiIters(solver, ilu_upper_jacobi_iters)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetILUUpperJacobiIters(solver::HYPRE_Solver, ilu_upper_jacobi_iters::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetILULocalReordering(solver, ilu_reordering_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetILULocalReordering(solver::HYPRE_Solver, ilu_reordering_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetILUIterSetupType(solver, ilu_iter_setup_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetILUIterSetupType(solver::HYPRE_Solver, ilu_iter_setup_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetILUIterSetupOption(solver, ilu_iter_setup_option)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetILUIterSetupOption(solver::HYPRE_Solver, ilu_iter_setup_option::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetILUIterSetupMaxIter(solver, ilu_iter_setup_max_iter)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetILUIterSetupMaxIter(solver::HYPRE_Solver, ilu_iter_setup_max_iter::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetILUIterSetupTolerance(solver, ilu_iter_setup_tolerance)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetILUIterSetupTolerance(solver::HYPRE_Solver, ilu_iter_setup_tolerance::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetFSAIAlgoType(solver, algo_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetFSAIAlgoType(solver::HYPRE_Solver, algo_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetFSAILocalSolveType(solver, local_solve_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetFSAILocalSolveType(solver::HYPRE_Solver, local_solve_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetFSAIMaxSteps(solver, max_steps)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetFSAIMaxSteps(solver::HYPRE_Solver, max_steps::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetFSAIMaxStepSize(solver, max_step_size)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetFSAIMaxStepSize(solver::HYPRE_Solver, max_step_size::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetFSAIMaxNnzRow(solver, max_nnz_row)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetFSAIMaxNnzRow(solver::HYPRE_Solver, max_nnz_row::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetFSAINumLevels(solver, num_levels)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetFSAINumLevels(solver::HYPRE_Solver, num_levels::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetFSAIThreshold(solver, threshold)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetFSAIThreshold(solver::HYPRE_Solver, threshold::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetFSAIEigMaxIters(solver, eig_max_iters)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetFSAIEigMaxIters(solver::HYPRE_Solver, eig_max_iters::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetFSAIKapTolerance(solver, kap_tolerance)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetFSAIKapTolerance(solver::HYPRE_Solver, kap_tolerance::HYPRE_Real)::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetRestriction(solver, restr_par)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetRestriction(solver::HYPRE_Solver, restr_par::HYPRE_Int)::HYPRE_Int
 end
@@ -2144,12 +2628,24 @@ function HYPRE_BoomerAMGSetPrintLevel(solver, print_level)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetPrintLevel(solver::HYPRE_Solver, print_level::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetPrintLevel(solver, print_level)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetPrintLevel(solver::HYPRE_Solver, print_level::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetLogging(solver, logging)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetLogging(solver::HYPRE_Solver, logging::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_BoomerAMGGetLogging(solver, logging)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetLogging(solver::HYPRE_Solver, logging::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_BoomerAMGSetDebugFlag(solver, debug_flag)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetDebugFlag(solver::HYPRE_Solver, debug_flag::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetDebugFlag(solver, debug_flag)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetDebugFlag(solver::HYPRE_Solver, debug_flag::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGInitGridRelaxation(num_grid_sweeps_ptr, grid_relax_type_ptr, grid_relax_points_ptr, coarsen_type, relax_weights_ptr, max_levels)
@@ -2206,6 +2702,46 @@ end
 
 function HYPRE_BoomerAMGSetSabs(solver, Sabs)
     return @ccall libHYPRE.HYPRE_BoomerAMGSetSabs(solver::HYPRE_Solver, Sabs::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetMaxRowSum(solver, max_row_sum)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetMaxRowSum(solver::HYPRE_Solver, max_row_sum::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetPostInterpType(solver, post_interp_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetPostInterpType(solver::HYPRE_Solver, post_interp_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetPostInterpType(solver, post_interp_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetPostInterpType(solver::HYPRE_Solver, post_interp_type::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetJacobiTruncThreshold(solver, jacobi_trunc_threshold)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetJacobiTruncThreshold(solver::HYPRE_Solver, jacobi_trunc_threshold::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGGetJacobiTruncThreshold(solver, jacobi_trunc_threshold)
+    return @ccall libHYPRE.HYPRE_BoomerAMGGetJacobiTruncThreshold(solver::HYPRE_Solver, jacobi_trunc_threshold::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetNumCRRelaxSteps(solver, num_CR_relax_steps)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetNumCRRelaxSteps(solver::HYPRE_Solver, num_CR_relax_steps::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetCRRate(solver, CR_rate)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetCRRate(solver::HYPRE_Solver, CR_rate::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetCRStrongTh(solver, CR_strong_th)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetCRStrongTh(solver::HYPRE_Solver, CR_strong_th::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetCRUseCG(solver, CR_use_CG)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetCRUseCG(solver::HYPRE_Solver, CR_use_CG::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BoomerAMGSetISType(solver, IS_type)
+    return @ccall libHYPRE.HYPRE_BoomerAMGSetISType(solver::HYPRE_Solver, IS_type::HYPRE_Int)::HYPRE_Int
 end
 
 function HYPRE_BoomerAMGDDCreate(solver)
@@ -2272,6 +2808,78 @@ function HYPRE_BoomerAMGDDGetNumIterations(solver, num_iterations)
     return @ccall libHYPRE.HYPRE_BoomerAMGDDGetNumIterations(solver::HYPRE_Solver, num_iterations::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
+function HYPRE_FSAICreate(solver)
+    return @ccall libHYPRE.HYPRE_FSAICreate(solver::Ptr{HYPRE_Solver})::HYPRE_Int
+end
+
+function HYPRE_FSAIDestroy(solver)
+    return @ccall libHYPRE.HYPRE_FSAIDestroy(solver::HYPRE_Solver)::HYPRE_Int
+end
+
+function HYPRE_FSAISetup(solver, A, b, x)
+    return @ccall libHYPRE.HYPRE_FSAISetup(solver::HYPRE_Solver, A::HYPRE_ParCSRMatrix, b::HYPRE_ParVector, x::HYPRE_ParVector)::HYPRE_Int
+end
+
+function HYPRE_FSAISolve(solver, A, b, x)
+    return @ccall libHYPRE.HYPRE_FSAISolve(solver::HYPRE_Solver, A::HYPRE_ParCSRMatrix, b::HYPRE_ParVector, x::HYPRE_ParVector)::HYPRE_Int
+end
+
+function HYPRE_FSAISetAlgoType(solver, algo_type)
+    return @ccall libHYPRE.HYPRE_FSAISetAlgoType(solver::HYPRE_Solver, algo_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_FSAISetLocalSolveType(solver, local_solve_type)
+    return @ccall libHYPRE.HYPRE_FSAISetLocalSolveType(solver::HYPRE_Solver, local_solve_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_FSAISetMaxSteps(solver, max_steps)
+    return @ccall libHYPRE.HYPRE_FSAISetMaxSteps(solver::HYPRE_Solver, max_steps::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_FSAISetMaxStepSize(solver, max_step_size)
+    return @ccall libHYPRE.HYPRE_FSAISetMaxStepSize(solver::HYPRE_Solver, max_step_size::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_FSAISetMaxNnzRow(solver, max_nnz_row)
+    return @ccall libHYPRE.HYPRE_FSAISetMaxNnzRow(solver::HYPRE_Solver, max_nnz_row::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_FSAISetNumLevels(solver, num_levels)
+    return @ccall libHYPRE.HYPRE_FSAISetNumLevels(solver::HYPRE_Solver, num_levels::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_FSAISetThreshold(solver, threshold)
+    return @ccall libHYPRE.HYPRE_FSAISetThreshold(solver::HYPRE_Solver, threshold::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_FSAISetKapTolerance(solver, kap_tolerance)
+    return @ccall libHYPRE.HYPRE_FSAISetKapTolerance(solver::HYPRE_Solver, kap_tolerance::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_FSAISetOmega(solver, omega)
+    return @ccall libHYPRE.HYPRE_FSAISetOmega(solver::HYPRE_Solver, omega::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_FSAISetMaxIterations(solver, max_iterations)
+    return @ccall libHYPRE.HYPRE_FSAISetMaxIterations(solver::HYPRE_Solver, max_iterations::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_FSAISetEigMaxIters(solver, eig_max_iters)
+    return @ccall libHYPRE.HYPRE_FSAISetEigMaxIters(solver::HYPRE_Solver, eig_max_iters::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_FSAISetTolerance(solver, tolerance)
+    return @ccall libHYPRE.HYPRE_FSAISetTolerance(solver::HYPRE_Solver, tolerance::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_FSAISetPrintLevel(solver, print_level)
+    return @ccall libHYPRE.HYPRE_FSAISetPrintLevel(solver::HYPRE_Solver, print_level::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_FSAISetZeroGuess(solver, zero_guess)
+    return @ccall libHYPRE.HYPRE_FSAISetZeroGuess(solver::HYPRE_Solver, zero_guess::HYPRE_Int)::HYPRE_Int
+end
+
 function HYPRE_ParaSailsCreate(comm, solver)
     return @ccall libHYPRE.HYPRE_ParaSailsCreate(comm::MPI_Comm, solver::Ptr{HYPRE_Solver})::HYPRE_Int
 end
@@ -2336,24 +2944,60 @@ function HYPRE_ParCSRParaSailsSetParams(solver, thresh, nlevels)
     return @ccall libHYPRE.HYPRE_ParCSRParaSailsSetParams(solver::HYPRE_Solver, thresh::HYPRE_Real, nlevels::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_ParaSailsSetThresh(solver, thresh)
+    return @ccall libHYPRE.HYPRE_ParaSailsSetThresh(solver::HYPRE_Solver, thresh::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_ParaSailsGetThresh(solver, thresh)
+    return @ccall libHYPRE.HYPRE_ParaSailsGetThresh(solver::HYPRE_Solver, thresh::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
+function HYPRE_ParaSailsSetNlevels(solver, nlevels)
+    return @ccall libHYPRE.HYPRE_ParaSailsSetNlevels(solver::HYPRE_Solver, nlevels::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_ParaSailsGetNlevels(solver, nlevels)
+    return @ccall libHYPRE.HYPRE_ParaSailsGetNlevels(solver::HYPRE_Solver, nlevels::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_ParCSRParaSailsSetFilter(solver, filter)
     return @ccall libHYPRE.HYPRE_ParCSRParaSailsSetFilter(solver::HYPRE_Solver, filter::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_ParaSailsGetFilter(solver, filter)
+    return @ccall libHYPRE.HYPRE_ParaSailsGetFilter(solver::HYPRE_Solver, filter::Ptr{HYPRE_Real})::HYPRE_Int
 end
 
 function HYPRE_ParCSRParaSailsSetSym(solver, sym)
     return @ccall libHYPRE.HYPRE_ParCSRParaSailsSetSym(solver::HYPRE_Solver, sym::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_ParaSailsGetSym(solver, sym)
+    return @ccall libHYPRE.HYPRE_ParaSailsGetSym(solver::HYPRE_Solver, sym::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_ParCSRParaSailsSetLoadbal(solver, loadbal)
     return @ccall libHYPRE.HYPRE_ParCSRParaSailsSetLoadbal(solver::HYPRE_Solver, loadbal::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_ParaSailsGetLoadbal(solver, loadbal)
+    return @ccall libHYPRE.HYPRE_ParaSailsGetLoadbal(solver::HYPRE_Solver, loadbal::Ptr{HYPRE_Real})::HYPRE_Int
 end
 
 function HYPRE_ParCSRParaSailsSetReuse(solver, reuse)
     return @ccall libHYPRE.HYPRE_ParCSRParaSailsSetReuse(solver::HYPRE_Solver, reuse::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_ParaSailsGetReuse(solver, reuse)
+    return @ccall libHYPRE.HYPRE_ParaSailsGetReuse(solver::HYPRE_Solver, reuse::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_ParCSRParaSailsSetLogging(solver, logging)
     return @ccall libHYPRE.HYPRE_ParCSRParaSailsSetLogging(solver::HYPRE_Solver, logging::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_ParaSailsGetLogging(solver, logging)
+    return @ccall libHYPRE.HYPRE_ParaSailsGetLogging(solver::HYPRE_Solver, logging::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_EuclidCreate(comm, solver)
@@ -2597,7 +3241,7 @@ function HYPRE_ADSSetSmoothingOptions(solver, relax_type, relax_times, relax_wei
 end
 
 function HYPRE_ADSSetChebySmoothingOptions(solver, cheby_order, cheby_fraction)
-    return @ccall libHYPRE.HYPRE_ADSSetChebySmoothingOptions(solver::HYPRE_Solver, cheby_order::HYPRE_Int, cheby_fraction::HYPRE_Int)::HYPRE_Int
+    return @ccall libHYPRE.HYPRE_ADSSetChebySmoothingOptions(solver::HYPRE_Solver, cheby_order::HYPRE_Int, cheby_fraction::HYPRE_Real)::HYPRE_Int
 end
 
 function HYPRE_ADSSetAMSOptions(solver, cycle_type, coarsen_type, agg_levels, relax_type, strength_threshold, interp_type, Pmax)
@@ -2614,6 +3258,62 @@ end
 
 function HYPRE_ADSGetFinalRelativeResidualNorm(solver, rel_resid_norm)
     return @ccall libHYPRE.HYPRE_ADSGetFinalRelativeResidualNorm(solver::HYPRE_Solver, rel_resid_norm::Ptr{HYPRE_Real})::HYPRE_Int
+end
+
+function HYPRE_AMECreate(esolver)
+    return @ccall libHYPRE.HYPRE_AMECreate(esolver::Ptr{HYPRE_Solver})::HYPRE_Int
+end
+
+function HYPRE_AMEDestroy(esolver)
+    return @ccall libHYPRE.HYPRE_AMEDestroy(esolver::HYPRE_Solver)::HYPRE_Int
+end
+
+function HYPRE_AMESetup(esolver)
+    return @ccall libHYPRE.HYPRE_AMESetup(esolver::HYPRE_Solver)::HYPRE_Int
+end
+
+function HYPRE_AMESolve(esolver)
+    return @ccall libHYPRE.HYPRE_AMESolve(esolver::HYPRE_Solver)::HYPRE_Int
+end
+
+function HYPRE_AMESetAMSSolver(esolver, ams_solver)
+    return @ccall libHYPRE.HYPRE_AMESetAMSSolver(esolver::HYPRE_Solver, ams_solver::HYPRE_Solver)::HYPRE_Int
+end
+
+function HYPRE_AMESetMassMatrix(esolver, M)
+    return @ccall libHYPRE.HYPRE_AMESetMassMatrix(esolver::HYPRE_Solver, M::HYPRE_ParCSRMatrix)::HYPRE_Int
+end
+
+function HYPRE_AMESetBlockSize(esolver, block_size)
+    return @ccall libHYPRE.HYPRE_AMESetBlockSize(esolver::HYPRE_Solver, block_size::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_AMESetMaxIter(esolver, maxit)
+    return @ccall libHYPRE.HYPRE_AMESetMaxIter(esolver::HYPRE_Solver, maxit::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_AMESetMaxPCGIter(esolver, maxit)
+    return @ccall libHYPRE.HYPRE_AMESetMaxPCGIter(esolver::HYPRE_Solver, maxit::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_AMESetTol(esolver, tol)
+    return @ccall libHYPRE.HYPRE_AMESetTol(esolver::HYPRE_Solver, tol::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_AMESetRTol(esolver, tol)
+    return @ccall libHYPRE.HYPRE_AMESetRTol(esolver::HYPRE_Solver, tol::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_AMESetPrintLevel(esolver, print_level)
+    return @ccall libHYPRE.HYPRE_AMESetPrintLevel(esolver::HYPRE_Solver, print_level::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_AMEGetEigenvalues(esolver, eigenvalues)
+    return @ccall libHYPRE.HYPRE_AMEGetEigenvalues(esolver::HYPRE_Solver, eigenvalues::Ptr{Ptr{HYPRE_Real}})::HYPRE_Int
+end
+
+function HYPRE_AMEGetEigenvectors(esolver, eigenvectors)
+    return @ccall libHYPRE.HYPRE_AMEGetEigenvectors(esolver::HYPRE_Solver, eigenvectors::Ptr{Ptr{HYPRE_ParVector}})::HYPRE_Int
 end
 
 function HYPRE_ParCSRPCGCreate(comm, solver)
@@ -2658,6 +3358,10 @@ end
 
 function HYPRE_ParCSRPCGSetPrecond(solver, precond, precond_setup, precond_solver)
     return @ccall libHYPRE.HYPRE_ParCSRPCGSetPrecond(solver::HYPRE_Solver, precond::HYPRE_PtrToParSolverFcn, precond_setup::HYPRE_PtrToParSolverFcn, precond_solver::HYPRE_Solver)::HYPRE_Int
+end
+
+function HYPRE_ParCSRPCGSetPreconditioner(solver, precond)
+    return @ccall libHYPRE.HYPRE_ParCSRPCGSetPreconditioner(solver::HYPRE_Solver, precond::HYPRE_Solver)::HYPRE_Int
 end
 
 function HYPRE_ParCSRPCGGetPrecond(solver, precond_data)
@@ -2714,6 +3418,14 @@ end
 
 function HYPRE_ParCSRGMRESSolve(solver, A, b, x)
     return @ccall libHYPRE.HYPRE_ParCSRGMRESSolve(solver::HYPRE_Solver, A::HYPRE_ParCSRMatrix, b::HYPRE_ParVector, x::HYPRE_ParVector)::HYPRE_Int
+end
+
+function HYPRE_ParCSRGMRESSetRefSolution(solver, ref_solution)
+    return @ccall libHYPRE.HYPRE_ParCSRGMRESSetRefSolution(solver::HYPRE_Solver, ref_solution::HYPRE_ParVector)::HYPRE_Int
+end
+
+function HYPRE_ParCSRGMRESGetRefSolution(solver, ref_solution)
+    return @ccall libHYPRE.HYPRE_ParCSRGMRESGetRefSolution(solver::HYPRE_Solver, ref_solution::Ptr{HYPRE_ParVector})::HYPRE_Int
 end
 
 function HYPRE_ParCSRGMRESSetKDim(solver, k_dim)
@@ -3444,8 +4156,20 @@ function HYPRE_MGRSetLevelFRelaxMethod(solver, relax_method)
     return @ccall libHYPRE.HYPRE_MGRSetLevelFRelaxMethod(solver::HYPRE_Solver, relax_method::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
+function HYPRE_MGRSetLevelFRelaxType(solver, relax_type)
+    return @ccall libHYPRE.HYPRE_MGRSetLevelFRelaxType(solver::HYPRE_Solver, relax_type::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_MGRSetCoarseGridMethod(solver, cg_method)
     return @ccall libHYPRE.HYPRE_MGRSetCoarseGridMethod(solver::HYPRE_Solver, cg_method::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_MGRSetNonGalerkinMaxElmts(solver, max_elmts)
+    return @ccall libHYPRE.HYPRE_MGRSetNonGalerkinMaxElmts(solver::HYPRE_Solver, max_elmts::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_MGRSetLevelNonGalerkinMaxElmts(solver, max_elmts)
+    return @ccall libHYPRE.HYPRE_MGRSetLevelNonGalerkinMaxElmts(solver::HYPRE_Solver, max_elmts::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_MGRSetLevelFRelaxNumFunctions(solver, num_functions)
@@ -3476,12 +4200,24 @@ function HYPRE_MGRSetNumRelaxSweeps(solver, nsweeps)
     return @ccall libHYPRE.HYPRE_MGRSetNumRelaxSweeps(solver::HYPRE_Solver, nsweeps::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_MGRSetLevelNumRelaxSweeps(solver, nsweeps)
+    return @ccall libHYPRE.HYPRE_MGRSetLevelNumRelaxSweeps(solver::HYPRE_Solver, nsweeps::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
 function HYPRE_MGRSetNumInterpSweeps(solver, nsweeps)
     return @ccall libHYPRE.HYPRE_MGRSetNumInterpSweeps(solver::HYPRE_Solver, nsweeps::HYPRE_Int)::HYPRE_Int
 end
 
+function HYPRE_MGRSetBlockJacobiBlockSize(solver, blk_size)
+    return @ccall libHYPRE.HYPRE_MGRSetBlockJacobiBlockSize(solver::HYPRE_Solver, blk_size::HYPRE_Int)::HYPRE_Int
+end
+
 function HYPRE_MGRSetFSolver(solver, fine_grid_solver_solve, fine_grid_solver_setup, fsolver)
     return @ccall libHYPRE.HYPRE_MGRSetFSolver(solver::HYPRE_Solver, fine_grid_solver_solve::HYPRE_PtrToParSolverFcn, fine_grid_solver_setup::HYPRE_PtrToParSolverFcn, fsolver::HYPRE_Solver)::HYPRE_Int
+end
+
+function HYPRE_MGRSetFSolverAtLevel(solver, fsolver, level)
+    return @ccall libHYPRE.HYPRE_MGRSetFSolverAtLevel(solver::HYPRE_Solver, fsolver::HYPRE_Solver, level::HYPRE_Int)::HYPRE_Int
 end
 
 function HYPRE_MGRBuildAff(A, CF_marker, debug_flag, A_ff)
@@ -3520,12 +4256,28 @@ function HYPRE_MGRSetTol(solver, tol)
     return @ccall libHYPRE.HYPRE_MGRSetTol(solver::HYPRE_Solver, tol::HYPRE_Real)::HYPRE_Int
 end
 
-function HYPRE_MGRSetMaxGlobalsmoothIters(solver, smooth_iter)
-    return @ccall libHYPRE.HYPRE_MGRSetMaxGlobalsmoothIters(solver::HYPRE_Solver, smooth_iter::HYPRE_Int)::HYPRE_Int
+function HYPRE_MGRSetMaxGlobalSmoothIters(solver, smooth_iter)
+    return @ccall libHYPRE.HYPRE_MGRSetMaxGlobalSmoothIters(solver::HYPRE_Solver, smooth_iter::HYPRE_Int)::HYPRE_Int
 end
 
-function HYPRE_MGRSetGlobalsmoothType(solver, smooth_type)
-    return @ccall libHYPRE.HYPRE_MGRSetGlobalsmoothType(solver::HYPRE_Solver, smooth_type::HYPRE_Int)::HYPRE_Int
+function HYPRE_MGRSetLevelSmoothIters(solver, smooth_iters)
+    return @ccall libHYPRE.HYPRE_MGRSetLevelSmoothIters(solver::HYPRE_Solver, smooth_iters::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_MGRSetGlobalSmoothCycle(solver, global_smooth_cycle)
+    return @ccall libHYPRE.HYPRE_MGRSetGlobalSmoothCycle(solver::HYPRE_Solver, global_smooth_cycle::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_MGRSetGlobalSmoothType(solver, smooth_type)
+    return @ccall libHYPRE.HYPRE_MGRSetGlobalSmoothType(solver::HYPRE_Solver, smooth_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_MGRSetLevelSmoothType(solver, smooth_type)
+    return @ccall libHYPRE.HYPRE_MGRSetLevelSmoothType(solver::HYPRE_Solver, smooth_type::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_MGRSetGlobalSmootherAtLevel(solver, smoother, level)
+    return @ccall libHYPRE.HYPRE_MGRSetGlobalSmootherAtLevel(solver::HYPRE_Solver, smoother::HYPRE_Solver, level::HYPRE_Int)::HYPRE_Int
 end
 
 function HYPRE_MGRGetNumIterations(solver, num_iterations)
@@ -3538,6 +4290,10 @@ end
 
 function HYPRE_MGRSetPMaxElmts(solver, P_max_elmts)
     return @ccall libHYPRE.HYPRE_MGRSetPMaxElmts(solver::HYPRE_Solver, P_max_elmts::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_MGRSetLevelPMaxElmts(solver, P_max_elmts)
+    return @ccall libHYPRE.HYPRE_MGRSetLevelPMaxElmts(solver::HYPRE_Solver, P_max_elmts::Ptr{HYPRE_Int})::HYPRE_Int
 end
 
 function HYPRE_MGRGetFinalRelativeResidualNorm(solver, res_norm)
@@ -3562,6 +4318,34 @@ end
 
 function HYPRE_ILUSetMaxIter(solver, max_iter)
     return @ccall libHYPRE.HYPRE_ILUSetMaxIter(solver::HYPRE_Solver, max_iter::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_ILUSetIterativeSetupType(solver, iter_setup_type)
+    return @ccall libHYPRE.HYPRE_ILUSetIterativeSetupType(solver::HYPRE_Solver, iter_setup_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_ILUSetIterativeSetupOption(solver, iter_setup_option)
+    return @ccall libHYPRE.HYPRE_ILUSetIterativeSetupOption(solver::HYPRE_Solver, iter_setup_option::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_ILUSetIterativeSetupMaxIter(solver, iter_setup_max_iter)
+    return @ccall libHYPRE.HYPRE_ILUSetIterativeSetupMaxIter(solver::HYPRE_Solver, iter_setup_max_iter::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_ILUSetIterativeSetupTolerance(solver, iter_setup_tolerance)
+    return @ccall libHYPRE.HYPRE_ILUSetIterativeSetupTolerance(solver::HYPRE_Solver, iter_setup_tolerance::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_ILUSetTriSolve(solver, tri_solve)
+    return @ccall libHYPRE.HYPRE_ILUSetTriSolve(solver::HYPRE_Solver, tri_solve::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_ILUSetLowerJacobiIters(solver, lower_jacobi_iterations)
+    return @ccall libHYPRE.HYPRE_ILUSetLowerJacobiIters(solver::HYPRE_Solver, lower_jacobi_iterations::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_ILUSetUpperJacobiIters(solver, upper_jacobi_iterations)
+    return @ccall libHYPRE.HYPRE_ILUSetUpperJacobiIters(solver::HYPRE_Solver, upper_jacobi_iterations::HYPRE_Int)::HYPRE_Int
 end
 
 function HYPRE_ILUSetTol(solver, tol)
@@ -3648,36 +4432,8 @@ function GenerateRSVarDifConv(comm, nx, ny, nz, P, Q, R, p, q, r, eps, rhs_ptr, 
     return @ccall libHYPRE.GenerateRSVarDifConv(comm::MPI_Comm, nx::HYPRE_BigInt, ny::HYPRE_BigInt, nz::HYPRE_BigInt, P::HYPRE_Int, Q::HYPRE_Int, R::HYPRE_Int, p::HYPRE_Int, q::HYPRE_Int, r::HYPRE_Int, eps::HYPRE_Real, rhs_ptr::Ptr{HYPRE_ParVector}, type::HYPRE_Int)::HYPRE_ParCSRMatrix
 end
 
-function GenerateCoordinates(comm, nx, ny, nz, P, Q, R, p, q, r, coorddim)
-    return @ccall libHYPRE.GenerateCoordinates(comm::MPI_Comm, nx::HYPRE_BigInt, ny::HYPRE_BigInt, nz::HYPRE_BigInt, P::HYPRE_Int, Q::HYPRE_Int, R::HYPRE_Int, p::HYPRE_Int, q::HYPRE_Int, r::HYPRE_Int, coorddim::HYPRE_Int)::Ptr{Cfloat}
-end
-
-function HYPRE_BoomerAMGSetPostInterpType(solver, post_interp_type)
-    return @ccall libHYPRE.HYPRE_BoomerAMGSetPostInterpType(solver::HYPRE_Solver, post_interp_type::HYPRE_Int)::HYPRE_Int
-end
-
-function HYPRE_BoomerAMGSetJacobiTruncThreshold(solver, jacobi_trunc_threshold)
-    return @ccall libHYPRE.HYPRE_BoomerAMGSetJacobiTruncThreshold(solver::HYPRE_Solver, jacobi_trunc_threshold::HYPRE_Real)::HYPRE_Int
-end
-
-function HYPRE_BoomerAMGSetNumCRRelaxSteps(solver, num_CR_relax_steps)
-    return @ccall libHYPRE.HYPRE_BoomerAMGSetNumCRRelaxSteps(solver::HYPRE_Solver, num_CR_relax_steps::HYPRE_Int)::HYPRE_Int
-end
-
-function HYPRE_BoomerAMGSetCRRate(solver, CR_rate)
-    return @ccall libHYPRE.HYPRE_BoomerAMGSetCRRate(solver::HYPRE_Solver, CR_rate::HYPRE_Real)::HYPRE_Int
-end
-
-function HYPRE_BoomerAMGSetCRStrongTh(solver, CR_strong_th)
-    return @ccall libHYPRE.HYPRE_BoomerAMGSetCRStrongTh(solver::HYPRE_Solver, CR_strong_th::HYPRE_Real)::HYPRE_Int
-end
-
-function HYPRE_BoomerAMGSetCRUseCG(solver, CR_use_CG)
-    return @ccall libHYPRE.HYPRE_BoomerAMGSetCRUseCG(solver::HYPRE_Solver, CR_use_CG::HYPRE_Int)::HYPRE_Int
-end
-
-function HYPRE_BoomerAMGSetISType(solver, IS_type)
-    return @ccall libHYPRE.HYPRE_BoomerAMGSetISType(solver::HYPRE_Solver, IS_type::HYPRE_Int)::HYPRE_Int
+function hypre_GenerateCoordinates(comm, nx, ny, nz, P, Q, R, p, q, r, coorddim)
+    return @ccall libHYPRE.hypre_GenerateCoordinates(comm::MPI_Comm, nx::HYPRE_BigInt, ny::HYPRE_BigInt, nz::HYPRE_BigInt, P::HYPRE_Int, Q::HYPRE_Int, R::HYPRE_Int, p::HYPRE_Int, q::HYPRE_Int, r::HYPRE_Int, coorddim::HYPRE_Int)::Ptr{Cfloat}
 end
 
 function HYPRE_ParCSRSetupInterpreter(i)
@@ -3694,6 +4450,46 @@ end
 
 function HYPRE_ParCSRMultiVectorRead(comm, ii_, fileName)
     return @ccall libHYPRE.HYPRE_ParCSRMultiVectorRead(comm::MPI_Comm, ii_::Ptr{Cvoid}, fileName::Ptr{Cchar})::Ptr{Cvoid}
+end
+
+function HYPRE_TempParCSRSetupInterpreter(i)
+    return @ccall libHYPRE.HYPRE_TempParCSRSetupInterpreter(i::Ptr{mv_InterfaceInterpreter})::HYPRE_Int
+end
+
+function HYPRE_BlockTridiagCreate(solver)
+    return @ccall libHYPRE.HYPRE_BlockTridiagCreate(solver::Ptr{HYPRE_Solver})::HYPRE_Int
+end
+
+function HYPRE_BlockTridiagDestroy(solver)
+    return @ccall libHYPRE.HYPRE_BlockTridiagDestroy(solver::HYPRE_Solver)::HYPRE_Int
+end
+
+function HYPRE_BlockTridiagSetup(solver, A, b, x)
+    return @ccall libHYPRE.HYPRE_BlockTridiagSetup(solver::HYPRE_Solver, A::HYPRE_ParCSRMatrix, b::HYPRE_ParVector, x::HYPRE_ParVector)::HYPRE_Int
+end
+
+function HYPRE_BlockTridiagSolve(solver, A, b, x)
+    return @ccall libHYPRE.HYPRE_BlockTridiagSolve(solver::HYPRE_Solver, A::HYPRE_ParCSRMatrix, b::HYPRE_ParVector, x::HYPRE_ParVector)::HYPRE_Int
+end
+
+function HYPRE_BlockTridiagSetIndexSet(solver, n, inds)
+    return @ccall libHYPRE.HYPRE_BlockTridiagSetIndexSet(solver::HYPRE_Solver, n::HYPRE_Int, inds::Ptr{HYPRE_Int})::HYPRE_Int
+end
+
+function HYPRE_BlockTridiagSetAMGStrengthThreshold(solver, thresh)
+    return @ccall libHYPRE.HYPRE_BlockTridiagSetAMGStrengthThreshold(solver::HYPRE_Solver, thresh::HYPRE_Real)::HYPRE_Int
+end
+
+function HYPRE_BlockTridiagSetAMGNumSweeps(solver, num_sweeps)
+    return @ccall libHYPRE.HYPRE_BlockTridiagSetAMGNumSweeps(solver::HYPRE_Solver, num_sweeps::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BlockTridiagSetAMGRelaxType(solver, relax_type)
+    return @ccall libHYPRE.HYPRE_BlockTridiagSetAMGRelaxType(solver::HYPRE_Solver, relax_type::HYPRE_Int)::HYPRE_Int
+end
+
+function HYPRE_BlockTridiagSetPrintLevel(solver, print_level)
+    return @ccall libHYPRE.HYPRE_BlockTridiagSetPrintLevel(solver::HYPRE_Solver, print_level::HYPRE_Int)::HYPRE_Int
 end
 
 const HYPRE_UNITIALIZED = -999
@@ -3720,15 +4516,19 @@ const HYPRE_Jacobi = 17
 
 const HYPRE_RELEASE_NAME = "HYPRE"
 
-const HYPRE_RELEASE_VERSION = "2.23.0"
+const HYPRE_RELEASE_VERSION = "3.0.0"
 
-const HYPRE_RELEASE_NUMBER = 22300
+const HYPRE_RELEASE_NUMBER = 30000
 
-const HYPRE_RELEASE_DATE = "2021/10/01"
+const HYPRE_RELEASE_DATE = "2025/09/26"
 
 const HYPRE_RELEASE_TIME = "00:00:00"
 
 const HYPRE_RELEASE_BUGS = "https://github.com/hypre-space/hypre/issues"
+
+const HYPRE_DEVELOP_STRING = "v3.0.0-0-gda9f93f8d"
+
+const HYPRE_BRANCH_NAME = "HEAD"
 
 const HYPRE_MAXDIM = 3
 
@@ -3736,7 +4536,13 @@ const HYPRE_USING_HYPRE_BLAS = 1
 
 const HYPRE_USING_HYPRE_LAPACK = 1
 
+const HYPRE_USING_OPENMP = 1
+
+const HYPRE_USING_HOST_MEMORY = 1
+
 const HYPRE_HAVE_MPI = 1
+
+const HYPRE_HAVE_MPI_COMM_F2C = 1
 
 const HYPRE_FMANGLE = 0
 
@@ -3744,15 +4550,27 @@ const HYPRE_FMANGLE_BLAS = 0
 
 const HYPRE_FMANGLE_LAPACK = 0
 
-const HYPRE_USING_HOST_MEMORY = 1
+# const HYPRE_BIG_INT_MAX = INT_MAX
+
+# const HYPRE_BIG_INT_MIN = INT_MIN
+
+# const HYPRE_INT_MAX = INT_MAX
+
+# const HYPRE_INT_MIN = INT_MIN
 
 const HYPRE_MPI_BIG_INT = MPI_INT
 
 const HYPRE_MPI_INT = MPI_INT
 
+# const HYPRE_REAL_TRUE_MIN = DBL_TRUE_MIN
+
 const HYPRE_MPI_REAL = MPI_DOUBLE
 
 const HYPRE_MPI_COMPLEX = HYPRE_MPI_REAL
+
+const HYPRE_OBJECT_PRECISION = HYPRE_REAL_DOUBLE
+
+const hypre_DEFINE_GLOBAL = 1
 
 const HYPRE_ERROR_GENERIC = 1
 
@@ -3761,3 +4579,7 @@ const HYPRE_ERROR_MEMORY = 2
 const HYPRE_ERROR_ARG = 4
 
 const HYPRE_ERROR_CONV = 256
+
+const HYPRE_MAX_FILE_NAME_LEN = 1024
+
+const HYPRE_MAX_MSG_LEN = 2048
