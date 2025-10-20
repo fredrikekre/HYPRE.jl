@@ -10,27 +10,37 @@ export HYPREMatrix, HYPREVector
 # Clang.jl auto-generated bindings and some manual methods
 include("LibHYPRE.jl")
 using .LibHYPRE
-using .LibHYPRE: @check
+using .LibHYPRE: @check, HYPRE_SetNumThreads, HYPRE_NumThreads
 
 # Internal namespace to hide utility functions
 include("Internals.jl")
 
 
 """
-    Init(; finalize_atexit=true)
+    Init(; finalize_atexit=true, nthreads = 1)
 
 Wrapper around `HYPRE_Initialize`. If `finalize_atexit` is `true` a Julia exit hook is added,
 which calls `HYPRE_Finalize`. This method will also call `MPI.Init` unless MPI is already
 initialized.
 
+The optional argument `nthreads` can be used to set the number of OpenMP threads
+HYPRE should use. The default is `1`, meaning no multithreading. See
+[`set_nthreads`](@ref) for more details. Setting `threads` to `0` or a negative
+value means that the number of threads will be controlled by hypre internally.
+This will typically be equal to the maximum number of threads, or the value in
+the ENV variable `OMP_NUM_THREADS`.
+
 **Note**: This function *must* be called before using HYPRE functions.
 """
-function Init(; finalize_atexit = true)
+function Init(; nthreads = 1, finalize_atexit = true)
     if !(MPI.Initialized())
         MPI.Init()
     end
     # TODO: Check if already initialized?
     HYPRE_Initialize()
+    if nthreads > 0
+        set_nthreads(nthreads)
+    end
     if finalize_atexit
         # TODO: MPI only calls the finalizer if not exiting due to a Julia exeption. Does
         #       the same reasoning apply here?
@@ -44,6 +54,34 @@ function Init(; finalize_atexit = true)
     return nothing
 end
 
+"""
+    set_nthreads(1)  # Single OpenMP thread
+    set_nthreads(10) # Use up to 10 OpenMP threads
+
+Set the number of OpenMP threads HYPRE should use internally on current process.
+The default is `1`, meaning no multithreading. Setting it to a zero or a
+negative value means that the number of threads will be unchanged.
+
+**Note***: The number of threads can improve execution speed, but a large number
+of threads can be detrimental to actual solver performance for some solvers
+(e.g. parallel Gauss-Seidel smoothers).
+"""
+function set_nthreads(nt::Integer)
+    if nt > 0
+        nt = min(nt, Sys.CPU_THREADS)
+        HYPRE_SetNumThreads(nt)
+    end
+    return nthreads()
+end
+
+"""
+    n = threads()
+
+Get the current number of OpenMP threads HYPRE is set to use on current process.
+"""
+function nthreads()
+    return HYPRE_NumThreads()
+end
 
 ###############
 # HYPREMatrix #

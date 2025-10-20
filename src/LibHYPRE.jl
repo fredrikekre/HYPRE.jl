@@ -19,6 +19,10 @@ function HYPRE_SetNumThreads(nt::HYPRE_Int)
     return @ccall libHYPRE.hypre_SetNumThreads(nt::HYPRE_Int)::Ptr{Cvoid}
 end
 
+function HYPRE_SetNumThreads(nt::Integer)
+    return HYPRE_SetNumThreads(HYPRE_Int(nt))
+end
+
 # Add manual methods for some ::Function signatures where the library wants function
 # pointers. Instead of creating function pointers to the Julia wrappers we can just look
 # up the pointer in the library and pass that.

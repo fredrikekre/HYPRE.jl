@@ -6,6 +6,13 @@
 HYPRE.Init
 ```
 
+## Threads
+
+```@docs
+HYPRE.set_nthreads()
+HYPRE.nthreads()
+```
+
 ## Matrix/vector creation
 
 ```@docs
