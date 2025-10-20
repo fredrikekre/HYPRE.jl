@@ -756,7 +756,7 @@ end
     @test HYPRE.nthreads() == 2
     @test HYPRE.set_nthreads(0) == 2
     @test HYPRE.set_nthreads(1_000_000) == Sys.CPU_THREADS
-    @test HYPRE.set_nthreads(current)
+    @test HYPRE.set_nthreads(current) == current
 end
 
 @testset "MPI execution" begin
