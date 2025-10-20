@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+### Changed
+- Updated HYPRE_jll to use hypre 3.0.0. This jll now includes OpenMP support. The upstream API has a breaking release, see the [hypre changelog](https://github.com/hypre-space/hypre/blob/master/CHANGELOG).
+- `HYPRE_Init` now calls `HYPRE_Initialize` to match updated API.
+
+### Added
+- Functions for controlling threads (`HYPRE.set_nthreads` and `HYPRE.nthreads`) have been added.
+
 ## [v1.7.0] - 2024-10-09
 ### Changed
  - Support for Julia 1.6 have been dropped and for this and future releases Julia 1.10 or
