@@ -5,6 +5,11 @@ using Libdl: dlsym
 # Clang.jl auto-generated bindings
 include("../lib/LibHYPRE.jl")
 
+# Backwards compatibility for older versions of HYPRE.jl
+function HYPRE_Init()
+    return HYPRE_Initialize()
+end
+
 # Add manual methods for some ::Function signatures where the library wants function
 # pointers. Instead of creating function pointers to the Julia wrappers we can just look
 # up the pointer in the library and pass that.
