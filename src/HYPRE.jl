@@ -10,7 +10,7 @@ export HYPREMatrix, HYPREVector
 # Clang.jl auto-generated bindings and some manual methods
 include("LibHYPRE.jl")
 using .LibHYPRE
-using .LibHYPRE: @check, HYPRE_SetNumThreads, HYPRE_NumThreads
+using .LibHYPRE: @check, HYPRE_SetNumThreads, HYPRE_NumThreads, HYPRE_Initialized
 
 # Internal namespace to hide utility functions
 include("Internals.jl")
@@ -30,25 +30,27 @@ value means that the number of threads will be controlled by hypre internally.
 This will typically be equal to the maximum number of threads, or the value in
 the ENV variable `OMP_NUM_THREADS`.
 
-**Note**: This function *must* be called before using HYPRE functions.
+**Note**: This function *must* be called before using HYPRE functions. Calling
+this function more than once has no effect.
 """
 function Init(; nthreads = 1, finalize_atexit = true)
     if !(MPI.Initialized())
         MPI.Init()
     end
-    # TODO: Check if already initialized?
-    HYPRE_Initialize()
-    if nthreads > 0
-        set_nthreads(nthreads)
-    end
-    if finalize_atexit
-        # TODO: MPI only calls the finalizer if not exiting due to a Julia exeption. Does
-        #       the same reasoning apply here?
-        atexit() do
-            # Finalize any HYPRE objects that are still alive
-            foreach(finalize, keys(Internals.HYPRE_OBJECTS))
-            # Finalize the library
-            HYPRE_Finalize()
+    if HYPRE_Initialized() == 0
+        HYPRE_Initialize()
+        if nthreads > 0
+            set_nthreads(nthreads)
+        end
+        if finalize_atexit
+            # TODO: MPI only calls the finalizer if not exiting due to a Julia exeption. Does
+            #       the same reasoning apply here?
+            atexit() do
+                # Finalize any HYPRE objects that are still alive
+                foreach(finalize, keys(Internals.HYPRE_OBJECTS))
+                # Finalize the library
+                HYPRE_Finalize()
+            end
         end
     end
     return nothing
