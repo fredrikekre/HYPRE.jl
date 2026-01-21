@@ -6,21 +6,32 @@ using Libdl: dlsym
 include("../lib/LibHYPRE.jl")
 
 # Backwards compatibility for older versions of HYPRE.jl
-function HYPRE_Init()
-    return HYPRE_Initialize()
-end
+@deprecate HYPRE_Init() HYPRE_Initialize()
 
-# Threading utilities if built with OpenMP
+# Threading utilities if built with OpenMP (TODO: Upstream these?)
 function HYPRE_NumThreads()
     return @ccall libHYPRE.hypre_NumThreads()::HYPRE_Int
 end
 
-function HYPRE_SetNumThreads(nt::HYPRE_Int)
-    return @ccall libHYPRE.hypre_SetNumThreads(nt::HYPRE_Int)::Ptr{Cvoid}
-end
+"""
+    HYPRE_SetNumThreads(nt::Integer)
 
+Configure the number of internal OpenMP threads the HYPRE library should use for the current
+process. The value is clamped between `1` and `Sys.CPU_THREADS` before passing it on to
+HYPRE. Return the result of `HYPRE_NumThreads()`.
+
+If the number of threads is not configured (by setting `nthreads = 0` in `HYPRE.Init` and
+not calling this function explicitly) HYPRE will control the number of threads internally
+(e.g. by using all available CPU cores, or the `OMP_NUM_THREADS` environment variable).
+
+**Note***: The number of threads can improve execution speed, but a large number
+of threads can be detrimental to actual solver performance for some solvers
+(e.g. parallel Gauss-Seidel smoothers).
+"""
 function HYPRE_SetNumThreads(nt::Integer)
-    return HYPRE_SetNumThreads(HYPRE_Int(nt))
+    nt = HYPRE_Int(clamp(nt, 1, Sys.CPU_THREADS))
+    @ccall libHYPRE.hypre_SetNumThreads(nt::HYPRE_Int)::Ptr{Cvoid}
+    return HYPRE_NumThreads()
 end
 
 # Add manual methods for some ::Function signatures where the library wants function

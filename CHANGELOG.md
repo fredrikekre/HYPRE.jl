@@ -5,13 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
-### Changed
-- Updated HYPRE_jll to use hypre 3.0.0. This jll now includes OpenMP support. The upstream API has a breaking release, see the [hypre changelog](https://github.com/hypre-space/hypre/blob/master/CHANGELOG).
-- `HYPRE_Init` now calls `HYPRE_Initialize` to match updated API.
-
+## [v1.8.0]
+This release upgrades the HYPRE_jll dependency to version 3 (i.e. hypre version 3). This
+upgrade result in the following additions and changes.
 ### Added
-- Functions for controlling threads (`HYPRE.set_nthreads` and `HYPRE.nthreads`) have been added.
+- The new jll is built with OpenMP support. Number of HYPRE threads can be set with the new
+  functions `LibHYPRE.HYPRE_SetNumThreads` and queried with `LibHYPRE.HYPRE_NumThreads`.
+- The upstream API expose a number of new library functions. See
+  [lib/LibHYPRE.jl](https://github.com/fredrikekre/HYPRE.jl/blob/master/lib/LibHYPRE.jl) for
+  the complete list of API functions exposed by this package in the `HYRPE.LibHYPRE`
+  submodule.
+### Changed
+- The upstream API have some breaking changes, see the
+  [hypre changelog](https://github.com/hypre-space/hypre/blob/master/CHANGELOG).
+- `LibHYRPE.HYPRE_Init` have been deprecated in favor of `LibHYPRE.HYPRE_Initialize` to
+  match the updated upstream API.
 
 ## [v1.7.0] - 2024-10-09
 ### Changed
