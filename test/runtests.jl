@@ -750,13 +750,13 @@ end
 end
 
 @testset "Threads" begin
-    current = LibHYPRE.HYPRE_NumThreads()
-    @test LibHYPRE.HYPRE_SetNumThreads(1) == 1
-    @test LibHYPRE.HYPRE_SetNumThreads(2) == 2
-    @test LibHYPRE.HYPRE_NumThreads() == 2
-    @test LibHYPRE.HYPRE_SetNumThreads(0) == 1
-    @test LibHYPRE.HYPRE_SetNumThreads(1_000_000) == Sys.CPU_THREADS
-    @test LibHYPRE.HYPRE_SetNumThreads(current) == current
+    current = HYPRE.NumThreads()
+    @test HYPRE.SetNumThreads(1) == 1
+    @test HYPRE.SetNumThreads(2) == 2
+    @test HYPRE.NumThreads() == 2
+    @test HYPRE.SetNumThreads(0) == 1
+    @test HYPRE.SetNumThreads(1_000_000) == Sys.CPU_THREADS
+    @test HYPRE.SetNumThreads(current) == current
 end
 
 @testset "MPI execution" begin

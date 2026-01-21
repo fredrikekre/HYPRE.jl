@@ -4,13 +4,8 @@
 
 ```@docs
 HYPRE.Init
-```
-
-## Threads
-
-```@docs
-HYPRE.set_nthreads
-HYPRE.nthreads
+HYPRE.SetNumThreads
+HYPRE.NumThreads
 ```
 
 ## Matrix/vector creation
