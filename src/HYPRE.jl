@@ -17,20 +17,32 @@ include("Internals.jl")
 
 
 """
-    Init(; finalize_atexit=true)
+    Init(; finalize_atexit=true, nthreads = 1)
 
-Wrapper around `HYPRE_Init`. If `finalize_atexit` is `true` a Julia exit hook is added,
-which calls `HYPRE_Finalize`. This method will also call `MPI.Init` unless MPI is already
-initialized.
+Wrapper around `HYPRE_Initialize`. Will also call `MPI.Init` unless MPI is already
+initialized. `HYPRE.Init` *must* be called before using any other HYPRE functions. Calling
+this function more than once has no effect.
 
-**Note**: This function *must* be called before using HYPRE functions.
+**Keyword arguments**:
+- `finalize_atexit::Bool`: when `true` (default) a Julia exit hook is added that release
+  allocated resources (i.e. matrices, vectors, solvers) and calls `HYPRE_Finalize`.
+- `nthreads::Integer`: configure the number of internal OpenMP threads the HYPRE library
+  should use. By default (`nthreads = 1`) no multithreading is used. Set `nthreads = 0` if
+  you want HYPRE to control the number of threads, or if you want to configure it at a later
+  point with [`HYPRE.SetNumThreads`](@ref). See documentation for
+  [`HYPRE.SetNumThreads`](@ref) for more details.
 """
-function Init(; finalize_atexit = true)
+function Init(; nthreads::Integer = 1, finalize_atexit::Bool = true)
+    if HYPRE_Initialized() > 0
+        return
+    end
     if !(MPI.Initialized())
         MPI.Init()
     end
-    # TODO: Check if already initialized?
-    HYPRE_Init()
+    HYPRE_Initialize()
+    if nthreads > 0
+        SetNumThreads(nthreads)
+    end
     if finalize_atexit
         # TODO: MPI only calls the finalizer if not exiting due to a Julia exeption. Does
         #       the same reasoning apply here?
@@ -41,7 +53,38 @@ function Init(; finalize_atexit = true)
             HYPRE_Finalize()
         end
     end
-    return nothing
+    return
+end
+
+
+"""
+    HYPRE.SetNumThreads(nt::Integer)
+
+Configure the number of internal OpenMP threads the HYPRE library should use for the current
+process. The value is clamped between `1` and `Sys.CPU_THREADS` before passing it on to
+HYPRE. Return the result of [`HYPRE.NumThreads()`](@ref)`.
+
+If the number of threads is not configured (by setting `nthreads = 0` in `HYPRE.Init` and
+not calling this function explicitly) HYPRE will control the number of threads internally
+(e.g. by using all available CPU cores, or the `OMP_NUM_THREADS` environment variable).
+
+**Note**: The number of threads can improve execution speed, but a large number
+of threads can be detrimental to actual solver performance for some solvers
+(e.g. parallel Gauss-Seidel smoothers).
+"""
+function SetNumThreads(nt::Integer)
+    nt = HYPRE_Int(clamp(nt, 1, Sys.CPU_THREADS))
+    HYPRE_SetNumThreads(nt)
+    return NumThreads()
+end
+
+"""
+    HYPRE.NumThreads()
+
+Query the number of OpenMP threads the HYPRE library is configured to use.
+"""
+function NumThreads()
+    return HYPRE_NumThreads()
 end
 
 

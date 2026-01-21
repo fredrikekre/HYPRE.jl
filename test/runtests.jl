@@ -17,7 +17,7 @@ HYPRE.Init()
 
 @testset "LibHYPRE" begin
     @test LibHYPRE.VERSION > VERSION # :)
-    @test LibHYPRE.VERSION.major == 2
+    @test LibHYPRE.VERSION.major == 3
 end
 
 @testset "HYPREMatrix" begin
@@ -420,7 +420,7 @@ end
     x_h = HYPREVector(b, ilower, iupper)
     # Solve
     tol = 1.0e-9
-    amg = HYPRE.BoomerAMG(; Tol = tol)
+    amg = HYPRE.BoomerAMG(; Tol = tol, MaxIter = 25)
     HYPRE.solve!(amg, x_h, A_h, b_h)
     copy!(x, x_h)
     @test (A * x ≈ b) atol = tol * norm(b) # default BoomerAMG criteria
@@ -747,6 +747,16 @@ end
     @test xcsc ≈ CSC \ b atol = tol
     xcsr = HYPRE.solve(pcg, CSR, b)
     @test xcsr ≈ CSC \ b atol = tol # TODO: CSR \ b fails
+end
+
+@testset "Threads" begin
+    current = HYPRE.NumThreads()
+    @test HYPRE.SetNumThreads(1) == 1
+    @test HYPRE.SetNumThreads(2) == 2
+    @test HYPRE.NumThreads() == 2
+    @test HYPRE.SetNumThreads(0) == 1
+    @test HYPRE.SetNumThreads(1_000_000) == Sys.CPU_THREADS
+    @test HYPRE.SetNumThreads(current) == current
 end
 
 @testset "MPI execution" begin
