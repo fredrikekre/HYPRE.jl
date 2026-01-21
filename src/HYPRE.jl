@@ -29,8 +29,8 @@ this function more than once has no effect.
 - `nthreads::Integer`: configure the number of internal OpenMP threads the HYPRE library
   should use. By default (`nthreads = 1`) no multithreading is used. Set `nthreads = 0` if
   you want HYPRE to control the number of threads, or if you want to configure it at a later
-  point with `HYPRE.SetNumThreads`. See documentation for `HYPRE.SetNumThreads` for more
-  details.
+  point with [`HYPRE.SetNumThreads`](@ref). See documentation for
+  [`HYPRE.SetNumThreads`](@ref) for more details.
 """
 function Init(; nthreads::Integer = 1, finalize_atexit::Bool = true)
     if HYPRE_Initialized() > 0
@@ -62,13 +62,13 @@ end
 
 Configure the number of internal OpenMP threads the HYPRE library should use for the current
 process. The value is clamped between `1` and `Sys.CPU_THREADS` before passing it on to
-HYPRE. Return the result of `HYPRE.NumThreads()`.
+HYPRE. Return the result of [`HYPRE.NumThreads()`](@ref)`.
 
 If the number of threads is not configured (by setting `nthreads = 0` in `HYPRE.Init` and
 not calling this function explicitly) HYPRE will control the number of threads internally
 (e.g. by using all available CPU cores, or the `OMP_NUM_THREADS` environment variable).
 
-**Note***: The number of threads can improve execution speed, but a large number
+**Note**: The number of threads can improve execution speed, but a large number
 of threads can be detrimental to actual solver performance for some solvers
 (e.g. parallel Gauss-Seidel smoothers).
 """

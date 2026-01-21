@@ -14,7 +14,7 @@ Changelog.generate(
     Changelog.Documenter(),
     joinpath(@__DIR__, "..", "CHANGELOG.md"),
     joinpath(@__DIR__, "src", "changelog.md");
-    repo = "Ferrite-FEM/Ferrite.jl",
+    repo = "fredrikekre/HYPRE.jl",
 )
 
 makedocs(
