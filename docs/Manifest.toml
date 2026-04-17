@@ -102,8 +102,8 @@ uuid = "f8c6e375-362e-5223-8a59-34ff63f689eb"
 version = "2.53.0+0"
 
 [[deps.HYPRE]]
-deps = ["CEnum", "HYPRE_jll", "Libdl", "MPI"]
-git-tree-sha1 = "65db3eb88dfe08dcefd8d84d6fe1fb378b9b5a32"
+deps = ["CEnum", "HYPRE_jll", "Libdl", "LinearAlgebra", "MPI"]
+path = ".."
 uuid = "b5ffcf37-a2bd-41ab-a3da-4bd9bc8ad771"
 version = "1.8.0"
 
@@ -219,6 +219,11 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "be484f5c92fad0bd8acfef35fe017900b0b73809"
 uuid = "94ce4f54-9a6c-5748-9c1c-f9c7231a4531"
 version = "1.18.0+0"
+
+[[deps.LinearAlgebra]]
+deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
+uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+version = "1.12.0"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
