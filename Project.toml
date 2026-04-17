@@ -1,6 +1,6 @@
 name = "HYPRE"
 uuid = "b5ffcf37-a2bd-41ab-a3da-4bd9bc8ad771"
-version = "1.7.0"
+version = "1.8.0"
 
 [deps]
 CEnum = "fa961155-64e5-5f13-b03f-caf6b980ea82"
@@ -26,6 +26,7 @@ LinearSolve = "3"
 MPI = "0.19, 0.20"
 PartitionedArrays = "0.5"
 SparseMatricesCSR = "0.6"
+HYPRE_jll = "3"
 julia = "1.10"
 
 [extras]

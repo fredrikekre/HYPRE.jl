@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.8.0] - 2026-01-21
+This release upgrades the HYPRE_jll dependency to version 3 (i.e. hypre version 3). This
+upgrade result in the following additions and changes. ([#38])
+### Added
+- The new jll is built with OpenMP support. Number of HYPRE threads can be set with the new
+  functions `HYPRE.SetNumThreads` and queried with `HYPRE.NumThreads`. ([#38])
+- The upstream API expose a number of new library functions. See
+  [lib/LibHYPRE.jl](https://github.com/fredrikekre/HYPRE.jl/blob/master/lib/LibHYPRE.jl) for
+  the complete list of API functions exposed by this package in the `HYRPE.LibHYPRE`
+  submodule. ([#38])
+### Changed
+- The upstream API have some breaking changes, see the
+  [hypre changelog](https://github.com/hypre-space/hypre/blob/master/CHANGELOG). ([#38])
+- `LibHYPRE.HYPRE_Init` have been deprecated in favor of `LibHYPRE.HYPRE_Initialize` to
+  match the updated upstream API. ([#38])
+
 ## [v1.7.0] - 2024-10-09
 ### Changed
  - Support for Julia 1.6 have been dropped and for this and future releases Julia 1.10 or
@@ -94,6 +110,7 @@ Initial release of HYPRE.jl.
 [v1.5.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.5.0
 [v1.6.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.6.0
 [v1.7.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.7.0
+[v1.8.0]: https://github.com/fredrikekre/HYPRE.jl/releases/tag/v1.8.0
 [#2]: https://github.com/fredrikekre/HYPRE.jl/issues/2
 [#5]: https://github.com/fredrikekre/HYPRE.jl/issues/5
 [#6]: https://github.com/fredrikekre/HYPRE.jl/issues/6
@@ -110,3 +127,4 @@ Initial release of HYPRE.jl.
 [#25]: https://github.com/fredrikekre/HYPRE.jl/issues/25
 [#27]: https://github.com/fredrikekre/HYPRE.jl/issues/27
 [#28]: https://github.com/fredrikekre/HYPRE.jl/issues/28
+[#38]: https://github.com/fredrikekre/HYPRE.jl/issues/38

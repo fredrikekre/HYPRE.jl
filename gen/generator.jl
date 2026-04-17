@@ -14,12 +14,13 @@ push!(args, "-isystem$(mpi_include_dir)")
 
 # Compiler flags from Yggdrasil (??)
 # https://github.com/JuliaPackaging/Yggdrasil/blob/9d131ba0e4aa393b00f4d71ef5a3f909419a70a7/H/HYPRE/build_tarballs.jl
-push!(args, "-DHYPRE_ENABLE_SHARED=ON")
+push!(args, "-DBUILD_SHARED_LIBS=ON")
 push!(args, "-DHYPRE_ENABLE_HYPRE_BLAS=ON")
 push!(args, "-DHYPRE_ENABLE_HYPRE_LAPACK=ON")
 push!(args, "-DHYPRE_ENABLE_CUDA_STREAMS=OFF")
 push!(args, "-DHYPRE_ENABLE_CUSPARSE=OFF")
 push!(args, "-DHYPRE_ENABLE_CURAND=OFF")
+push!(args, "-DHYPRE_ENABLE_OPENMP=ON")
 
 headers = joinpath.(
     hypre_include_dir,

@@ -4,6 +4,8 @@
 
 ```@docs
 HYPRE.Init
+HYPRE.SetNumThreads
+HYPRE.NumThreads
 ```
 
 ## Matrix/vector creation
