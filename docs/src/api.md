@@ -39,3 +39,7 @@ HYPRE.ParaSails
 HYPRE.GetNumIterations
 HYPRE.GetFinalRelativeResidualNorm
 ```
+
+```@docs
+HYPRE.BoomerAMGPrecBuilder
+```

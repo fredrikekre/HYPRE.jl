@@ -15,6 +15,28 @@ interface.
 The high level interface does not (currently) provide access to all of HYPREs functionality,
 but it can easily be combined with the low level interface when necessary.
 
+BoomerAMG can also be used as preconditioner for Julia iterative solvers via LinearSolve.jl as follows:
+
+```julia
+using HYPRE, LinearSolve
+
+# Helper to set BoomerAMG options after construction
+function set_debug_printlevel(amg, A, p)
+    HYPRE.HYPRE_BoomerAMGSetPrintLevel(amg, 3)
+end
+
+# kwargs will be passed into the BoomerAMG constructor
+bamg = HYPRE.BoomerAMGPrecBuilder(
+    set_debug_printlevel;
+    Tol = 1e-9,
+)
+
+# Setup and solve linear problem via LinearSolve as usual
+prob = LinearProblem(A, b)
+solver = KrylovJL_CG(precs = bamg)
+x = solve(prob, solver, atol=1.0e-14)
+```
+
 ----
 
 ##### Low level interface

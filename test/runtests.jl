@@ -9,6 +9,7 @@ using PartitionedArrays
 using SparseArrays
 using SparseMatricesCSR
 using Test
+using LinearSolve
 
 include("test_utils.jl")
 
@@ -19,6 +20,28 @@ HYPRE.Init()
     @test LibHYPRE.VERSION > VERSION # :)
     @test LibHYPRE.VERSION.major == 3
 end
+
+@testset "use as LinearSolve.jl preconditioner" begin
+    # Setup
+    A = sprand(100, 100, 0.05); A = A'A + 5I
+    b = rand(100)
+    x = zeros(100)
+    # Solve
+    tol = 1.0e-9
+    # function set_debug_printlevel(amg, A, p)
+    #     HYPRE.HYPRE_BoomerAMGSetPrintLevel(amg, 3)
+    # end
+    bamg = HYPRE.BoomerAMGPrecBuilder(
+        (amg, A, p) -> nothing;
+        MaxIter = 1,
+        Tol = tol,
+    )
+    prob = LinearProblem(A, b)
+    solver = KrylovJL_CG(precs = bamg)
+    x = solve(prob, solver, atol = 1.0e-14)
+    @test x ≈ A \ b atol = √tol
+end
+
 
 @testset "HYPREMatrix" begin
     H = HYPREMatrix(MPI.COMM_WORLD, 1, 5)

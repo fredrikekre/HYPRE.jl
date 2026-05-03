@@ -3,9 +3,9 @@
 module HYPRE
 
 using MPI: MPI
+import LinearAlgebra
 
 export HYPREMatrix, HYPREVector
-
 
 # Clang.jl auto-generated bindings and some manual methods
 include("LibHYPRE.jl")
@@ -462,5 +462,8 @@ end
 
 include("solvers.jl")
 include("solver_options.jl")
+
+# LinearSolve preconditioner interface
+include("precs.jl")
 
 end # module HYPRE
